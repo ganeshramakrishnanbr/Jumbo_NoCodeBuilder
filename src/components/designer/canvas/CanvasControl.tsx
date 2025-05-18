@@ -19,7 +19,9 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
   useEffect(() => {
     if (control.type === ControlType.Accordion) {
       const accordionControl = control as AccordionControl;
-      setExpandedSections(accordionControl.sections.map(section => section.id));
+      if (accordionControl.sections && Array.isArray(accordionControl.sections)) {
+        setExpandedSections(accordionControl.sections.map(section => section.id));
+      }
     }
   }, [control]);
 
@@ -36,6 +38,10 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
   };
 
   const handleAddSection = (accordionControl: AccordionControl) => {
+    if (!accordionControl.sections || !Array.isArray(accordionControl.sections)) {
+      return;
+    }
+
     if (accordionControl.sections.length >= (accordionControl.maxSections || 3)) {
       alert('Maximum number of sections reached');
       return;
@@ -86,6 +92,10 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
 
         if (targetType === 'accordion' && control.type === ControlType.Accordion) {
           const accordionControl = control as AccordionControl;
+          if (!accordionControl.sections || !Array.isArray(accordionControl.sections)) {
+            return;
+          }
+
           const updatedSections = [...accordionControl.sections];
           const targetSection = updatedSections.find(section => section.id === sectionId);
           
