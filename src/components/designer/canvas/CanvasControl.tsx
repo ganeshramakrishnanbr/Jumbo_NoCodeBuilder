@@ -80,9 +80,12 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
           const accordionControl = control as AccordionControl;
           const updatedSections = [...accordionControl.sections];
           const targetSection = updatedSections.find(section => section.id === sectionId);
+          
           if (targetSection) {
-            targetSection.controls.push(newControl);
+            targetSection.controls = [...targetSection.controls, newControl];
             updateControl(control.id, { sections: updatedSections });
+            
+            // Ensure the section is expanded when a control is dropped
             if (!expandedSections.includes(targetSection.id)) {
               setExpandedSections(prev => [...prev, targetSection.id]);
             }

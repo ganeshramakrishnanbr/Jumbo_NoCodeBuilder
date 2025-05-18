@@ -23,6 +23,108 @@ const PreviewTab: React.FC = () => {
     }));
   };
 
+  const renderTextBox = (control: Control) => {
+    return (
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {control.label}
+          {control.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        <input
+          type="text"
+          value={formValues[control.id] || ''}
+          onChange={(e) => handleInputChange(control.id, e.target.value)}
+          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          placeholder={control.properties?.placeholder}
+          required={control.required}
+        />
+      </div>
+    );
+  };
+
+  const renderCheckbox = (control: Control) => {
+    const options = control.properties?.options || [];
+    const values = formValues[control.id] || [];
+
+    return (
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {control.label}
+          {control.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        <div className="space-y-2">
+          {options.map((option: any) => (
+            <div key={option.id} className="flex items-center">
+              <input
+                type="checkbox"
+                checked={values.includes(option.value)}
+                onChange={(e) => {
+                  const newValues = e.target.checked
+                    ? [...values, option.value]
+                    : values.filter((v: string) => v !== option.value);
+                  handleInputChange(control.id, newValues);
+                }}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label className="ml-2 text-sm text-gray-700">{option.label}</label>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderRadioButton = (control: Control) => {
+    const options = control.properties?.options || [];
+    return (
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {control.label}
+          {control.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        <div className="space-y-2">
+          {options.map((option: any) => (
+            <div key={option.id} className="flex items-center">
+              <input
+                type="radio"
+                name={control.id}
+                value={option.value}
+                checked={formValues[control.id] === option.value}
+                onChange={(e) => handleInputChange(control.id, e.target.value)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+              />
+              <label className="ml-2 text-sm text-gray-700">{option.label}</label>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDropdown = (control: Control) => {
+    const options = control.properties?.options || [];
+    return (
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {control.label}
+          {control.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        <select
+          value={formValues[control.id] || ''}
+          onChange={(e) => handleInputChange(control.id, e.target.value)}
+          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+        >
+          <option value="">Select an option</option>
+          {options.map((option: any) => (
+            <option key={option.id} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  };
+
   const renderAccordionControl = (control: AccordionControl) => {
     if (!control.sections) return null;
 
@@ -57,9 +159,16 @@ const PreviewTab: React.FC = () => {
     if (!control.visible) return null;
 
     switch (control.type) {
+      case ControlType.TextBox:
+        return renderTextBox(control);
+      case ControlType.Checkbox:
+        return renderCheckbox(control);
+      case ControlType.RadioButton:
+        return renderRadioButton(control);
+      case ControlType.Dropdown:
+        return renderDropdown(control);
       case ControlType.Accordion:
         return renderAccordionControl(control as AccordionControl);
-      // Add other control type renderers here
       default:
         return (
           <div className="p-4 border rounded-md">
