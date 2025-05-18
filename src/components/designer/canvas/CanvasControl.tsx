@@ -12,7 +12,6 @@ interface CanvasControlProps {
 const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
   const { updateControl, deleteControl, selectedControlId, setSelectedControlId } = useQuestionnaire();
   const { draggedItem, canDropIn, endDrag } = useDragDrop();
-  const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
 
   // Initialize expanded sections when the control is mounted
@@ -120,6 +119,17 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
     }
   };
 
+  const handleChildControlClick = (childControl: Control, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (childControl.type === ControlType.Checkbox) {
+      if (confirm('You clicked a checkbox control. Click OK to view its properties.')) {
+        setSelectedControlId(childControl.id);
+      }
+    } else {
+      setSelectedControlId(childControl.id);
+    }
+  };
+
   const renderAccordionControl = (accordionControl: AccordionControl) => {
     if (!accordionControl.sections || !Array.isArray(accordionControl.sections)) {
       const defaultSection = {
@@ -177,10 +187,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                         {section.controls.map((childControl) => (
                           <div
                             key={childControl.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedControlId(childControl.id);
-                            }}
+                            onClick={(e) => handleChildControlClick(childControl, e)}
                           >
                             <CanvasControl control={childControl} />
                           </div>
