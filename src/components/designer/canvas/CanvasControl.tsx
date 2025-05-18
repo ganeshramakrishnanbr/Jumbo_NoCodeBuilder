@@ -65,7 +65,8 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
     }
   };
 
-  const toggleSection = (sectionId: string) => {
+  const toggleSection = (sectionId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent section toggle from selecting the accordion
     setExpandedSections(prev => {
       if (prev.includes(sectionId)) {
         return prev.filter(id => id !== sectionId);
@@ -100,13 +101,16 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
           const targetSection = updatedSections.find(section => section.id === sectionId);
           
           if (targetSection) {
-            targetSection.controls = [...targetSection.controls, newControl];
+            targetSection.controls = [...(targetSection.controls || []), newControl];
             updateControl(control.id, { sections: updatedSections });
             
             // Ensure the section is expanded when a control is dropped
             if (!expandedSections.includes(targetSection.id)) {
               setExpandedSections(prev => [...prev, targetSection.id]);
             }
+
+            // Select the newly added control
+            setSelectedControlId(newControl.id);
           }
         }
       }
@@ -150,7 +154,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
             return (
               <div key={section.id} className="border rounded-lg overflow-hidden">
                 <button
-                  onClick={() => toggleSection(section.id)}
+                  onClick={(e) => toggleSection(section.id, e)}
                   className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
                 >
                   <span className="font-medium text-gray-900">{section.label}</span>
@@ -163,7 +167,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                     onDragOver={(e) => handleDragOver(e, 'accordion')}
                     onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
                   >
-                    {section.controls.length === 0 ? (
+                    {!section.controls || section.controls.length === 0 ? (
                       <div className="text-gray-400 text-center p-6 border-2 border-dashed rounded-lg">
                         Drop controls here to add to this section
                       </div>
@@ -177,7 +181,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                               setSelectedControlId(childControl.id);
                             }}
                           >
-                            <CanvasControl key={childControl.id} control={childControl} />
+                            <CanvasControl control={childControl} />
                           </div>
                         ))}
                       </div>
