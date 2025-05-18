@@ -3,11 +3,13 @@ import { useQuestionnaire } from '../../../contexts/QuestionnaireContext';
 import { Smartphone, Tablet, Monitor, Eye, EyeOff } from 'lucide-react';
 import { Control, ControlType, TabControl, ColumnLayoutControl } from '../../../types';
 
-const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire();
+const PreviewTab: React.FC = () => {  
+  const { questionnaire } = useQuestionnaire();
   const [viewportSize, setViewportSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [activeTabIndices, setActiveTabIndices] = useState<Record<string, number>>({});
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [showMasked, setShowMasked] = useState<Record<string, boolean>>({});
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
   const handleInputChange = (controlId: string, value: any) => {
     setFormValues(prev => ({
@@ -339,7 +341,9 @@ const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire
 
       <div className={`flex-1 overflow-auto ${getViewportClass()}`}>
         <div className="p-4 border rounded-md bg-white">
-          <h3 className="text-lg font-medium mb-6">{questionnaire.title}</h3>          <div className="space-y-6">            {questionnaire.controls.map((control) => (
+          <h3 className="text-lg font-medium mb-6">{questionnaire.title}</h3>          
+          <div className="space-y-6">            
+            {questionnaire.controls.map((control) => (
               <div key={control.id}>
                 {renderControl(control)}
               </div>
