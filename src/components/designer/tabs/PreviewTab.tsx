@@ -25,6 +25,13 @@ const PreviewTab: React.FC = () => {
     }));
   };
 
+  const renderLabel = (label: string, required: boolean) => (
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+  );
+
   const renderTextBox = (control: Control) => {
     return (
       <div className="mb-4">
