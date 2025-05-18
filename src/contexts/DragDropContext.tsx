@@ -37,18 +37,13 @@ export const DragDropProvider: React.FC<{ children: ReactNode }> = ({ children }
   const canDropIn = (targetType: string): boolean => {
     if (!draggedItem) return false;
 
-    // Container controls can be dropped in canvas, tabs, or other containers
-    if ([ControlType.Tab, ControlType.GroupBox, ControlType.Accordion, ControlType.ColumnLayout].includes(draggedItem.controlType)) {
-      return ['canvas', 'tab', 'column'].includes(targetType);
+    // Container controls can be dropped in canvas
+    if ([ControlType.Tab, ControlType.Accordion, ControlType.ColumnLayout].includes(draggedItem.controlType)) {
+      return ['canvas'].includes(targetType);
     }
 
-    // Basic and specialized controls can be dropped anywhere except directly on the canvas
-    if (targetType === 'canvas') {
-      return false;
-    }
-
-    // Allow dropping in any container
-    return ['tab', 'column', 'accordion', 'groupbox'].includes(targetType);
+    // Basic and specialized controls can be dropped in containers
+    return ['tab', 'column', 'accordion'].includes(targetType);
   };
 
   return (
