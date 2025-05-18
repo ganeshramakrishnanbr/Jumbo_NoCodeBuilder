@@ -59,7 +59,7 @@ export interface AccordionControl extends Control {
 export interface AccordionSection {
   id: string;
   label: string;
-  controls: Control[]; // ColumnLayoutControl is already a Control, no need for union type
+  controls: Control[];
 }
 
 export interface ColumnLayoutControl extends Control {

@@ -13,7 +13,7 @@ const AccordionProperties: React.FC<AccordionPropertiesProps> = ({ control, onCh
   const MAX_SECTIONS = 3;
 
   const handleAddSection = () => {
-    if (accordionControl.sections.length >= MAX_SECTIONS) {
+    if ((accordionControl.sections || []).length >= MAX_SECTIONS) {
       return;
     }
 
@@ -29,23 +29,35 @@ const AccordionProperties: React.FC<AccordionPropertiesProps> = ({ control, onCh
   };
 
   const handleRemoveSection = (sectionId: string) => {
-    if (accordionControl.sections.length <= 1) {
+    if ((accordionControl.sections || []).length <= 1) {
       alert("You must have at least one section");
       return;
     }
     
     onChange({
-      sections: accordionControl.sections.filter(section => section.id !== sectionId),
+      sections: (accordionControl.sections || []).filter(section => section.id !== sectionId),
     });
   };
 
   const handleSectionLabelChange = (sectionId: string, newLabel: string) => {
     onChange({
-      sections: accordionControl.sections.map(section =>
+      sections: (accordionControl.sections || []).map(section =>
         section.id === sectionId ? { ...section, label: newLabel } : section
       ),
     });
   };
+
+  // Initialize with a default section if none exist
+  React.useEffect(() => {
+    if (!accordionControl.sections || accordionControl.sections.length === 0) {
+      const defaultSection = {
+        id: nanoid(),
+        label: 'Section 1',
+        controls: [],
+      };
+      onChange({ sections: [defaultSection] });
+    }
+  }, []);
 
   return (
     <div>
@@ -55,14 +67,14 @@ const AccordionProperties: React.FC<AccordionPropertiesProps> = ({ control, onCh
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-medium text-gray-700">
-              Sections ({accordionControl.sections.length}/{MAX_SECTIONS})
+              Sections ({(accordionControl.sections || []).length}/{MAX_SECTIONS})
             </label>
             <button
               type="button"
               onClick={handleAddSection}
-              disabled={accordionControl.sections.length >= MAX_SECTIONS}
+              disabled={(accordionControl.sections || []).length >= MAX_SECTIONS}
               className={`flex items-center text-sm ${
-                accordionControl.sections.length >= MAX_SECTIONS
+                (accordionControl.sections || []).length >= MAX_SECTIONS
                   ? 'text-gray-400 cursor-not-allowed'
                   : 'text-blue-600 hover:text-blue-800'
               }`}
@@ -72,7 +84,7 @@ const AccordionProperties: React.FC<AccordionPropertiesProps> = ({ control, onCh
             </button>
           </div>
           
-          {accordionControl.sections.length >= MAX_SECTIONS && (
+          {(accordionControl.sections || []).length >= MAX_SECTIONS && (
             <div className="flex items-center text-amber-600 text-sm mb-2">
               <AlertCircle size={16} className="mr-1" />
               Maximum number of sections reached
@@ -80,7 +92,7 @@ const AccordionProperties: React.FC<AccordionPropertiesProps> = ({ control, onCh
           )}
           
           <div className="space-y-2">
-            {accordionControl.sections?.map((section, index) => (
+            {(accordionControl.sections || []).map((section, index) => (
               <div key={section.id} className="flex items-center border rounded-md p-2 bg-white">
                 <div className="flex-1">
                   <input
@@ -96,7 +108,7 @@ const AccordionProperties: React.FC<AccordionPropertiesProps> = ({ control, onCh
                   type="button"
                   onClick={() => handleRemoveSection(section.id)}
                   className="ml-2 text-red-500 hover:text-red-700 disabled:text-gray-400"
-                  disabled={accordionControl.sections.length <= 1}
+                  disabled={(accordionControl.sections || []).length <= 1}
                 >
                   <Trash2 size={16} />
                 </button>
