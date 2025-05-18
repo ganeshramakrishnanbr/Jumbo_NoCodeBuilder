@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuestionnaire } from '../../../contexts/QuestionnaireContext';
 import { useDragDrop } from '../../../contexts/DragDropContext';
-import { Control, ControlType, TabControl, ColumnLayoutControl } from '../../../types';
-import { Trash2, Settings, Move, Star } from 'lucide-react';
+import { Control, ControlType, TabControl, ColumnLayoutControl, AccordionControl } from '../../../types';
+import { Trash2, Settings, Move, Star, ChevronDown, ChevronUp } from 'lucide-react';
 import { nanoid } from 'nanoid';
 
 interface CanvasControlProps {
@@ -13,6 +13,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
   const { updateControl, deleteControl, selectedControlId, setSelectedControlId } = useQuestionnaire();
   const { draggedItem, canDropIn, endDrag } = useDragDrop();
   const [activeTabIndex, setActiveTabIndex] = useState(0);
+  const [expandedSections, setExpandedSections] = useState<string[]>([]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -33,7 +34,17 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
     }
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetType: string, tabIndex?: number, columnIndex?: number) => {
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      if (prev.includes(sectionId)) {
+        return prev.filter(id => id !== sectionId);
+      } else {
+        return [...prev, sectionId];
+      }
+    });
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetType: string, tabIndex?: number, columnIndex?: number, sectionId?: string) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -199,11 +210,80 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
             updatedColumns[columnIndex || 0].push(newControl);
             updateControl(control.id, { columnControls: updatedColumns });
           }
+        } else if (targetType === 'accordion' && control.type === ControlType.Accordion) {
+          const accordionControl = control as AccordionControl;
+          if (!accordionControl.sections) {
+            accordionControl.sections = [{
+              id: nanoid(),
+              label: 'New Section',
+              controls: []
+            }];
+          }
+          const updatedSections = [...accordionControl.sections];
+          const targetSection = updatedSections.find(section => section.id === sectionId);
+          if (targetSection) {
+            targetSection.controls.push(newControl);
+            updateControl(control.id, { sections: updatedSections });
+            if (!expandedSections.includes(targetSection.id)) {
+              setExpandedSections(prev => [...prev, targetSection.id]);
+            }
+          }
         }
       }
       
       endDrag();
     }
+  };
+
+  const renderAccordionControl = (accordionControl: AccordionControl) => {
+    if (!accordionControl.sections || !Array.isArray(accordionControl.sections) || accordionControl.sections.length === 0) {
+      const defaultSection = {
+        id: nanoid(),
+        label: 'New Section',
+        controls: []
+      };
+      updateControl(control.id, { sections: [defaultSection] });
+      return null;
+    }
+
+    return (
+      <div className="space-y-2">
+        {accordionControl.sections.map((section) => {
+          const isExpanded = expandedSections.includes(section.id);
+          return (
+            <div key={section.id} className="border rounded-lg overflow-hidden">
+              <button
+                onClick={() => toggleSection(section.id)}
+                className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                <span className="font-medium text-gray-900">{section.label}</span>
+                {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              </button>
+              
+              {isExpanded && (
+                <div
+                  className="p-4 bg-white"
+                  onDragOver={(e) => handleDragOver(e, 'accordion')}
+                  onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
+                >
+                  {section.controls.length === 0 ? (
+                    <div className="text-gray-400 text-center p-6 border-2 border-dashed rounded-lg">
+                      Drop controls here to add to this section
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {section.controls.map((childControl) => (
+                        <CanvasControl key={childControl.id} control={childControl} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   const renderTabControl = (tabControl: TabControl) => {
@@ -399,6 +479,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       
       {control.type === ControlType.Tab && renderTabControl(control as TabControl)}
       {control.type === ControlType.ColumnLayout && renderColumnLayoutControl(control as ColumnLayoutControl)}
+      {control.type === ControlType.Accordion && renderAccordionControl(control as AccordionControl)}
       {control.type === ControlType.Address && renderAddressControl()}
     </div>
   );
