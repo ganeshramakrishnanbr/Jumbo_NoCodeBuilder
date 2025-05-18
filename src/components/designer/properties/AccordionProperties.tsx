@@ -1,4 +1,3 @@
-```typescript
 import React from 'react';
 import { Control, AccordionControl } from '../../../types';
 import { Plus, Trash2, AlertCircle } from 'lucide-react';
@@ -143,4 +142,3 @@ const AccordionProperties: React.FC<AccordionPropertiesProps> = ({ control, onCh
 };
 
 export default AccordionProperties;
-```
