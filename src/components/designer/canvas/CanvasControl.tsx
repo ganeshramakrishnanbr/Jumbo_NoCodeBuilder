@@ -40,8 +40,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       draggedItem, 
       targetType, 
       tabIndex, 
-      columnIndex, 
-      sectionId, 
+      columnIndex,
       parentControlId: control.id,
       parentControlType: control.type 
     });
@@ -195,7 +194,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
           }
           const updatedTabs = [...tabControl.tabs];
           if (updatedTabs[tabIndex || activeTabIndex]) {
-            updatedTabs[tabIndex || activeTabIndex].controls.push(newControl);
+            updatedTabs[tabIndex || activeTabIndex].controls.push(newControlBase);
             updateControl(control.id, { tabs: updatedTabs });
           }
         } else if (targetType === 'column' && control.type === ControlType.ColumnLayout) {
@@ -205,7 +204,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
           }
           const updatedColumns = [...columnControl.columnControls];
           if (updatedColumns[columnIndex || 0]) {
-            updatedColumns[columnIndex || 0].push(newControl);
+            updatedColumns[columnIndex || 0].push(newControlBase);
             updateControl(control.id, { columnControls: updatedColumns });
           }
         }
