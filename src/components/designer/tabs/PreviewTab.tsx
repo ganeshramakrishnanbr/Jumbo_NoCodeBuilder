@@ -8,10 +8,10 @@ const PreviewTab: React.FC = () => {
   const [viewportSize, setViewportSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [activeTabIndices, setActiveTabIndices] = useState<Record<string, number>>({});
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [formValues, setFormValues] = useState<Record<string, any>>({});
   const [showMasked, setShowMasked] = useState<Record<string, boolean>>({});
 
-  const handleInputChange = (controlId: string, value: string) => {
+  const handleInputChange = (controlId: string, value: any) => {
     setFormValues(prev => ({
       ...prev,
       [controlId]: value
@@ -61,12 +61,13 @@ const PreviewTab: React.FC = () => {
           <div key={option.id} className="flex items-center">
             <input
               type="checkbox"
-              checked={formValues[`${control.id}_${option.id}`] === 'true'}
-              onChange={(e) => handleInputChange(`${control.id}_${option.id}`, String(e.target.checked))}
+              id={`${control.id}_${option.id}`}
+              checked={formValues[`${control.id}_${option.id}`] || false}
+              onChange={(e) => handleInputChange(`${control.id}_${option.id}`, e.target.checked)}
               disabled={!control.enabled}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
-            <label className="ml-2 block text-sm text-gray-700">
+            <label htmlFor={`${control.id}_${option.id}`} className="ml-2 block text-sm text-gray-700">
               {option.label}
             </label>
           </div>
@@ -83,6 +84,7 @@ const PreviewTab: React.FC = () => {
           <div key={option.id} className="flex items-center">
             <input
               type="radio"
+              id={`${control.id}_${option.id}`}
               name={control.id}
               value={option.value}
               checked={formValues[control.id] === option.value}
@@ -90,7 +92,7 @@ const PreviewTab: React.FC = () => {
               disabled={!control.enabled}
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
             />
-            <label className="ml-2 block text-sm text-gray-700">
+            <label htmlFor={`${control.id}_${option.id}`} className="ml-2 block text-sm text-gray-700">
               {option.label}
             </label>
           </div>
