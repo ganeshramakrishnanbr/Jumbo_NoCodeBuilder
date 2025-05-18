@@ -1,68 +1,68 @@
 import React, { useState } from 'react';
 import { useQuestionnaire } from '../../../contexts/QuestionnaireContext';
 import { Smartphone, Tablet, Monitor, Eye, EyeOff } from 'lucide-react';
-import { Control, ControlType, TabControl, ColumnLayoutControl, AccordionControl } from '../../../types';
+import { Control, ControlType, TabControl, ColumnLayoutControl } from '../../../types';
 
 const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire();
   const [viewportSize, setViewportSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [activeTabIndices, setActiveTabIndices] = useState<Record<string, number>>({});
-  const [expandedAccordionSections, setExpandedAccordionSections] = useState<Record<string, string[]>>({});
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [showMasked, setShowMasked] = useState<Record<string, boolean>>({});
 
-  const handleInputChange = (controlId: string, value: string) => {
+  const handleInputChange = (controlId: string, value: any) => {
     setFormValues(prev => ({
       ...prev,
       [controlId]: value
     }));
   };
 
-  const toggleMask = (controlId: string) => {
-    setShowMasked(prev => ({
+  const toggleAccordionSection = (accordionId: string, sectionId: string) => {
+    setExpandedSections(prev => ({
       ...prev,
-      [controlId]: !prev[controlId]
+      [`${accordionId}_${sectionId}`]: !prev[`${accordionId}_${sectionId}`]
     }));
   };
 
-  const renderLabel = (label: string, required: boolean = false) => (
-    <label className="block text-sm font-medium text-gray-700">
-      {label}
-      {required && <span className="text-red-500 ml-1">*</span>}
-    </label>
-  );
-
   const renderTextBox = (control: Control) => {
     return (
-      <div className="space-y-2">
-        {renderLabel(control.label || 'Text Input', control.required)}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {control.label}
+          {control.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
         <input
           type="text"
           value={formValues[control.id] || ''}
           onChange={(e) => handleInputChange(control.id, e.target.value)}
+          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           placeholder={control.properties?.placeholder}
-          disabled={!control.enabled}
-          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100"
+          required={control.required}
         />
       </div>
     );
   };
 
   const renderCheckbox = (control: Control) => {
+    const options = control.properties?.options || [];
+    const values = formValues[control.id] || [];
+
     return (
-      <div className="space-y-2">
-        {renderLabel(control.label || 'Checkbox', control.required)}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {control.label}
+          {control.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
         <div className="space-y-2">
-          {(control.properties?.options || []).map((option: any) => (
+          {options.map((option: any) => (
             <div key={option.id} className="flex items-center">
               <input
-                type="checkbox"                checked={Boolean(formValues[`${control.id}_${option.id}`]) || false}
-                onChange={(e) => handleInputChange(`${control.id}_${option.id}`, e.target.checked ? 'true' : 'false')}
+                type="checkbox"
+                checked={formValues[`${control.id}_${option.id}`] || false}
+                onChange={(e) => handleInputChange(`${control.id}_${option.id}`, e.target.checked)}
                 disabled={!control.enabled}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label className="ml-2 block text-sm text-gray-700">
-                {option.label}
-              </label>
+              <label className="ml-2 text-sm text-gray-700">{option.label}</label>
             </div>
           ))}
         </div>
@@ -71,23 +71,25 @@ const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire
   };
 
   const renderRadioButton = (control: Control) => {
+    const options = control.properties?.options || [];
     return (
-      <div className="space-y-2">
-        {renderLabel(control.label || 'Radio Button', control.required)}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          {control.label}
+          {control.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
         <div className="space-y-2">
-          {(control.properties?.options || []).map((option: any) => (
+          {options.map((option: any) => (
             <div key={option.id} className="flex items-center">
               <input
                 type="radio"
                 name={control.id}
+                value={option.value}
                 checked={formValues[control.id] === option.value}
-                onChange={() => handleInputChange(control.id, option.value)}
-                disabled={!control.enabled}
+                onChange={(e) => handleInputChange(control.id, e.target.value)}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
               />
-              <label className="ml-2 block text-sm text-gray-700">
-                {option.label}
-              </label>
+              <label className="ml-2 text-sm text-gray-700">{option.label}</label>
             </div>
           ))}
         </div>
@@ -96,17 +98,20 @@ const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire
   };
 
   const renderDropdown = (control: Control) => {
+    const options = control.properties?.options || [];
     return (
-      <div className="space-y-2">
-        {renderLabel(control.label || 'Dropdown', control.required)}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {control.label}
+          {control.required && <span className="text-red-500 ml-1">*</span>}
+        </label>
         <select
           value={formValues[control.id] || ''}
           onChange={(e) => handleInputChange(control.id, e.target.value)}
-          disabled={!control.enabled}
-          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100"
+          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
         >
           <option value="">Select an option</option>
-          {(control.properties?.options || []).map((option: any) => (
+          {options.map((option: any) => (
             <option key={option.id} value={option.value}>
               {option.label}
             </option>
@@ -116,117 +121,13 @@ const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire
     );
   };
 
-  const renderNumeric = (control: Control) => {
-    return (
-      <div className="space-y-2">
-        {renderLabel(control.label || 'Numeric Input', control.required)}
-        <input
-          type="number"
-          value={formValues[control.id] || ''}
-          onChange={(e) => handleInputChange(control.id, e.target.value)}
-          min={control.properties?.min ?? 0}
-          max={control.properties?.max ?? 100}
-          step={control.properties?.step ?? 1}
-          disabled={!control.enabled}
-          className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100"
-        />
-      </div>
-    );
-  };
-
-  const renderToggleSlider = (control: Control) => {
-    return (
-      <div className="space-y-2">
-        {renderLabel(control.label || 'Toggle Slider', control.required)}
-        <input
-          type="range"
-          value={formValues[control.id] || control.properties?.min || 0}
-          onChange={(e) => handleInputChange(control.id, e.target.value)}
-          min={control.properties?.min ?? 0}
-          max={control.properties?.max ?? 100}
-          step={control.properties?.step ?? 1}
-          disabled={!control.enabled}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-        />
-        <div className="flex justify-between text-xs text-gray-500">
-          <span>{control.properties?.min ?? 0}</span>
-          <span>{control.properties?.max ?? 100}</span>
-        </div>
-      </div>
-    );
-  };
-
-  const renderProtectedNumber = (control: Control) => {
-    if (!control.visible) return null;
-
-    const value = formValues[control.id] || '';
-    const maskChar = control.properties?.maskChar || '*';
-    const totalDigits = control.properties?.totalDigits || 10;
-    const showLastDigits = control.properties?.showLastDigits || 0;
-    const initiallyMasked = control.properties?.initiallyMasked ?? true;
-    const isShowingMasked = showMasked[control.id] ?? initiallyMasked;
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value.replace(/\D/g, '');
-      if (newValue.length <= totalDigits) {
-        handleInputChange(control.id, newValue);
-      }
-    };
-
-    const getMaskedValue = (value: string): string => {
-      if (!value) return '';
-      if (!isShowingMasked) return value;
-
-      const visiblePart = value.slice(-showLastDigits);
-      const maskedPart = maskChar.repeat(value.length - showLastDigits);
-      return maskedPart + visiblePart;
-    };
+  const renderAccordionControl = (control: AccordionControl) => {
+    if (!control.sections) return null;
 
     return (
-      <div className="space-y-2">
-        {renderLabel(control.label || 'Protected Number', control.required)}
-        <div className="relative">
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            value={getMaskedValue(value)}
-            onChange={handleChange}
-            maxLength={totalDigits}
-            placeholder={`Enter up to ${totalDigits} digits`}
-            disabled={!control.enabled}
-            className="block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm disabled:bg-gray-100"
-          />
-          <button
-            type="button"
-            onClick={() => toggleMask(control.id)}
-            className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600"
-          >
-            {isShowingMasked ? <Eye size={16} /> : <EyeOff size={16} />}
-          </button>
-        </div>
-        <div className="text-xs text-gray-500 flex justify-between">
-          <span>{value.length} / {totalDigits} digits</span>
-          {!control.enabled && <span className="text-gray-400">This field is disabled</span>}
-        </div>
-      </div>
-    );
-  };
-
-  const renderAddressControl = (control: Control) => {
-    if (!control.properties?.fields) return null;
-
-    const countryField = control.properties.fields.find((f: any) => f.label === 'Country');
-    const selectedCountry = formValues[countryField?.id || ''];
-
-    return (
-      <div className="space-y-4 p-4 border rounded-md bg-white">
-        <h3 className="font-medium text-gray-900">{control.label || 'Address'}</h3>
-        {control.properties.fields.map((field: any) => {
-          if (field.label === 'State/Province' && selectedCountry !== 'US') {
-            return null;
-          }
-
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {control.sections.map((section) => {
+          const isExpanded = expandedSections[`${control.id}_${section.id}`];
           return (
             <div key={field.id} className="space-y-2">
               {renderLabel(field.label, field.required)}
@@ -245,7 +146,7 @@ const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire
                   onChange={(e) => {
                     handleInputChange(field.id, e.target.value);
                     if (field.label === 'Country' && e.target.value !== 'US') {
-                      const stateField = control.properties?.fields.find((f: any) => f.label === 'State/Province');
+                      const stateField = control.properties.fields.find((f: any) => f.label === 'State/Province');
                       if (stateField) {
                         handleInputChange(stateField.id, '');
                       }
@@ -290,6 +191,7 @@ const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire
     
     return true;
   };
+
   const renderControl = (control: Control) => {
     if (!control.visible) return null;
 
@@ -298,8 +200,6 @@ const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire
         return renderTabControl(control as TabControl);
       case ControlType.ColumnLayout:
         return renderColumnLayout(control as ColumnLayoutControl);
-      case ControlType.Accordion:
-        return renderAccordionControl(control as AccordionControl);
       case ControlType.Address:
         return renderAddressControl(control);
       case ControlType.TextBox:
@@ -310,12 +210,8 @@ const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire
         return renderRadioButton(control);
       case ControlType.Dropdown:
         return renderDropdown(control);
-      case ControlType.Numeric:
-        return renderNumeric(control);
-      case ControlType.ToggleSlider:
-        return renderToggleSlider(control);
-      case ControlType.ProtectedNumber:
-        return renderProtectedNumber(control);
+      case ControlType.Accordion:
+        return renderAccordionControl(control as AccordionControl);
       default:
         return (
           <div className="p-4 border rounded-md">
@@ -327,17 +223,9 @@ const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire
   };
 
   const renderTabControl = (tabControl: TabControl) => {
-    // Initialize tabs if not present
-    if (!tabControl.tabs || !Array.isArray(tabControl.tabs) || tabControl.tabs.length === 0) {
-      return (
-        <div className="p-4 border rounded-md bg-gray-50">
-          <p className="text-sm text-gray-500">No tabs configured</p>
-        </div>
-      );
-    }
-
     const currentTabIndex = activeTabIndices[tabControl.id] || 0;
     const position = tabControl.position || 'top';
+    const isVertical = position === 'left' || position === 'right';
     
     const containerClasses = {
       top: 'flex flex-col',
@@ -373,27 +261,23 @@ const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire
       <div className="border rounded-md overflow-hidden">
         <div className={containerClasses}>
           <div className={tabListClasses}>
-            {tabControl.tabs?.map((tab, index) => (
+            {tabControl.tabs.map((tab, index) => (
               <button
-                key={tab?.id || index}
+                key={tab.id}
                 onClick={() => setActiveTabIndices(prev => ({ ...prev, [tabControl.id]: index }))}
                 className={tabClasses(index)}
               >
-                {tab?.label || `Tab ${index + 1}`}
+                {tab.label}
               </button>
             ))}
           </div>
           
           <div className="flex-1 p-4 bg-white">
-            {tabControl.tabs[currentTabIndex]?.controls?.map((control) => (
+            {tabControl.tabs[currentTabIndex].controls.map((control) => (
               <div key={control.id} className="mb-4">
                 {renderControl(control)}
               </div>
-            )) || (
-              <div className="text-sm text-gray-500">
-                No content in this tab
-              </div>
-            )}
+            ))}
           </div>
         </div>
       </div>
@@ -406,91 +290,7 @@ const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire
       <div className={columnClass}>
         {columnLayout.columnControls.map((column, index) => (
           <div key={index} className="space-y-4">
-            {column.map((control) => (
-              <div key={control.id}>
-                {renderControl(control)}
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderAccordionControl = (accordionControl: AccordionControl) => {
-    // Early return with message if sections are undefined or empty
-    if (!accordionControl?.sections || !Array.isArray(accordionControl.sections)) {
-      return (
-        <div className="p-4 border rounded-md bg-gray-50">
-          <p className="text-sm text-gray-500">No sections available</p>
-        </div>
-      );
-    }
-
-    // Initialize sections if not already in state
-    if (!expandedAccordionSections[accordionControl.id]) {
-      setExpandedAccordionSections(prev => ({
-        ...prev,
-        [accordionControl.id]: accordionControl.expandedSections || []
-      }));
-    }
-
-    const toggleSection = (sectionId: string) => {
-      setExpandedAccordionSections(prev => {
-        const currentExpandedSections = [...(prev[accordionControl.id] || [])];
-        
-        if (currentExpandedSections.includes(sectionId)) {
-          // Remove section from expanded list
-          return {
-            ...prev,
-            [accordionControl.id]: currentExpandedSections.filter(id => id !== sectionId)
-          };
-        } else {
-          // Add section to expanded list
-          if (!accordionControl.properties?.allowMultiple) {
-            // If multiple sections aren't allowed, replace the expanded sections
-            return { ...prev, [accordionControl.id]: [sectionId] };
-          }
-          // Otherwise add this section to the expanded sections
-          return { 
-            ...prev, 
-            [accordionControl.id]: [...currentExpandedSections, sectionId] 
-          };
-        }
-      });
-    };
-
-    const isExpanded = (sectionId: string) => {
-      return (expandedAccordionSections[accordionControl.id] || []).includes(sectionId);
-    };
-
-    return (
-      <div className="border rounded-md overflow-hidden">
-        {accordionControl.sections.map((section) => (
-          <div key={section.id} className="border-b last:border-b-0">
-            <div 
-              className="px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
-              onClick={() => toggleSection(section.id)}
-            >
-              <span className="font-medium">{section.label}</span>
-              <span>
-                {isExpanded(section.id) ? '−' : '+'}
-              </span>
-            </div>
-            
-            {isExpanded(section.id) && (
-              <div className="p-4 bg-white">
-                <div className="space-y-4">
-                  {section.controls?.map((control) => (
-                    <div key={control.id}>
-                      {renderControl(control)}
-                    </div>
-                  )) || (
-                    <p className="text-sm text-gray-500">No controls in this section</p>
-                  )}
-                </div>
-              </div>
-            )}
+            {column.map((control) => renderControl(control))}
           </div>
         ))}
       </div>
@@ -504,7 +304,6 @@ const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire
       case 'tablet':
         return 'max-w-2xl mx-auto';
       case 'desktop':
-      default:
         return 'w-full';
     }
   };

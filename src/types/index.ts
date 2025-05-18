@@ -52,6 +52,8 @@ export interface AccordionControl extends Control {
   type: ControlType.Accordion;
   sections: AccordionSection[];
   expandedSections?: string[];
+  layout: 'vertical' | 'horizontal';
+  maxSections: number;
 }
 
 export interface AccordionSection {
