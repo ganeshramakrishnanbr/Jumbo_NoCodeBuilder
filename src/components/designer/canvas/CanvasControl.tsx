@@ -88,7 +88,8 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
           label: `New ${draggedItem.controlType}`,
           required: false,
           visible: true,
-          enabled: true
+          enabled: true,
+          properties: draggedItem.controlType === ControlType.Checkbox ? { options: [] } : {}
         };
 
         if (targetType === 'accordion' && control.type === ControlType.Accordion) {
