@@ -57,7 +57,7 @@ export interface AccordionControl extends Control {
 export interface AccordionSection {
   id: string;
   label: string;
-  controls: Control[];
+  controls: Control[]; // ColumnLayoutControl is already a Control, no need for union type
 }
 
 export interface ColumnLayoutControl extends Control {
@@ -78,6 +78,14 @@ export interface DependencyCondition {
   type: "equals" | "notEquals" | "contains" | "notContains" | "greaterThan" | "lessThan" | "between" | "checked" | "unchecked" | "filled" | "empty";
   value: string[];
   secondaryValue?: any; // For "between" condition
+}
+
+export interface Condition {
+  id: string;
+  type: string; // Example: 'equals', 'notEquals', etc.
+  targetControlId: string;
+  property: string; // Example: 'value', 'visibility', etc.
+  value: any;
 }
 
 export interface Questionnaire {

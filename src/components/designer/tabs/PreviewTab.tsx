@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useQuestionnaire } from '../../../contexts/QuestionnaireContext';
 import { Smartphone, Tablet, Monitor, Eye, EyeOff } from 'lucide-react';
-import { Control, ControlType, TabControl, ColumnLayoutControl } from '../../../types';
+import { Control, ControlType, TabControl, ColumnLayoutControl, AccordionControl } from '../../../types';
 
-const PreviewTab: React.FC = () => {
-  const { questionnaire } = useQuestionnaire();
+const PreviewTab: React.FC = () => {  const { questionnaire } = useQuestionnaire();
   const [viewportSize, setViewportSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [activeTabIndices, setActiveTabIndices] = useState<Record<string, number>>({});
+  const [expandedAccordionSections, setExpandedAccordionSections] = useState<Record<string, string[]>>({});
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [showMasked, setShowMasked] = useState<Record<string, boolean>>({});
 
@@ -55,9 +55,8 @@ const PreviewTab: React.FC = () => {
           {(control.properties?.options || []).map((option: any) => (
             <div key={option.id} className="flex items-center">
               <input
-                type="checkbox"
-                checked={formValues[`${control.id}_${option.id}`] || false}
-                onChange={(e) => handleInputChange(`${control.id}_${option.id}`, e.target.checked)}
+                type="checkbox"                checked={Boolean(formValues[`${control.id}_${option.id}`]) || false}
+                onChange={(e) => handleInputChange(`${control.id}_${option.id}`, e.target.checked ? 'true' : 'false')}
                 disabled={!control.enabled}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
@@ -246,7 +245,7 @@ const PreviewTab: React.FC = () => {
                   onChange={(e) => {
                     handleInputChange(field.id, e.target.value);
                     if (field.label === 'Country' && e.target.value !== 'US') {
-                      const stateField = control.properties.fields.find((f: any) => f.label === 'State/Province');
+                      const stateField = control.properties?.fields.find((f: any) => f.label === 'State/Province');
                       if (stateField) {
                         handleInputChange(stateField.id, '');
                       }
@@ -291,7 +290,6 @@ const PreviewTab: React.FC = () => {
     
     return true;
   };
-
   const renderControl = (control: Control) => {
     if (!control.visible) return null;
 
@@ -300,6 +298,8 @@ const PreviewTab: React.FC = () => {
         return renderTabControl(control as TabControl);
       case ControlType.ColumnLayout:
         return renderColumnLayout(control as ColumnLayoutControl);
+      case ControlType.Accordion:
+        return renderAccordionControl(control as AccordionControl);
       case ControlType.Address:
         return renderAddressControl(control);
       case ControlType.TextBox:
@@ -327,9 +327,17 @@ const PreviewTab: React.FC = () => {
   };
 
   const renderTabControl = (tabControl: TabControl) => {
+    // Initialize tabs if not present
+    if (!tabControl.tabs || !Array.isArray(tabControl.tabs) || tabControl.tabs.length === 0) {
+      return (
+        <div className="p-4 border rounded-md bg-gray-50">
+          <p className="text-sm text-gray-500">No tabs configured</p>
+        </div>
+      );
+    }
+
     const currentTabIndex = activeTabIndices[tabControl.id] || 0;
     const position = tabControl.position || 'top';
-    const isVertical = position === 'left' || position === 'right';
     
     const containerClasses = {
       top: 'flex flex-col',
@@ -365,23 +373,27 @@ const PreviewTab: React.FC = () => {
       <div className="border rounded-md overflow-hidden">
         <div className={containerClasses}>
           <div className={tabListClasses}>
-            {tabControl.tabs.map((tab, index) => (
+            {tabControl.tabs?.map((tab, index) => (
               <button
-                key={tab.id}
+                key={tab?.id || index}
                 onClick={() => setActiveTabIndices(prev => ({ ...prev, [tabControl.id]: index }))}
                 className={tabClasses(index)}
               >
-                {tab.label}
+                {tab?.label || `Tab ${index + 1}`}
               </button>
             ))}
           </div>
           
           <div className="flex-1 p-4 bg-white">
-            {tabControl.tabs[currentTabIndex].controls.map((control) => (
+            {tabControl.tabs[currentTabIndex]?.controls?.map((control) => (
               <div key={control.id} className="mb-4">
                 {renderControl(control)}
               </div>
-            ))}
+            )) || (
+              <div className="text-sm text-gray-500">
+                No content in this tab
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -394,7 +406,91 @@ const PreviewTab: React.FC = () => {
       <div className={columnClass}>
         {columnLayout.columnControls.map((column, index) => (
           <div key={index} className="space-y-4">
-            {column.map((control) => renderControl(control))}
+            {column.map((control) => (
+              <div key={control.id}>
+                {renderControl(control)}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderAccordionControl = (accordionControl: AccordionControl) => {
+    // Early return with message if sections are undefined or empty
+    if (!accordionControl?.sections || !Array.isArray(accordionControl.sections)) {
+      return (
+        <div className="p-4 border rounded-md bg-gray-50">
+          <p className="text-sm text-gray-500">No sections available</p>
+        </div>
+      );
+    }
+
+    // Initialize sections if not already in state
+    if (!expandedAccordionSections[accordionControl.id]) {
+      setExpandedAccordionSections(prev => ({
+        ...prev,
+        [accordionControl.id]: accordionControl.expandedSections || []
+      }));
+    }
+
+    const toggleSection = (sectionId: string) => {
+      setExpandedAccordionSections(prev => {
+        const currentExpandedSections = [...(prev[accordionControl.id] || [])];
+        
+        if (currentExpandedSections.includes(sectionId)) {
+          // Remove section from expanded list
+          return {
+            ...prev,
+            [accordionControl.id]: currentExpandedSections.filter(id => id !== sectionId)
+          };
+        } else {
+          // Add section to expanded list
+          if (!accordionControl.properties?.allowMultiple) {
+            // If multiple sections aren't allowed, replace the expanded sections
+            return { ...prev, [accordionControl.id]: [sectionId] };
+          }
+          // Otherwise add this section to the expanded sections
+          return { 
+            ...prev, 
+            [accordionControl.id]: [...currentExpandedSections, sectionId] 
+          };
+        }
+      });
+    };
+
+    const isExpanded = (sectionId: string) => {
+      return (expandedAccordionSections[accordionControl.id] || []).includes(sectionId);
+    };
+
+    return (
+      <div className="border rounded-md overflow-hidden">
+        {accordionControl.sections.map((section) => (
+          <div key={section.id} className="border-b last:border-b-0">
+            <div 
+              className="px-4 py-3 bg-gray-50 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+              onClick={() => toggleSection(section.id)}
+            >
+              <span className="font-medium">{section.label}</span>
+              <span>
+                {isExpanded(section.id) ? '−' : '+'}
+              </span>
+            </div>
+            
+            {isExpanded(section.id) && (
+              <div className="p-4 bg-white">
+                <div className="space-y-4">
+                  {section.controls?.map((control) => (
+                    <div key={control.id}>
+                      {renderControl(control)}
+                    </div>
+                  )) || (
+                    <p className="text-sm text-gray-500">No controls in this section</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -444,9 +540,11 @@ const PreviewTab: React.FC = () => {
 
       <div className={`flex-1 overflow-auto ${getViewportClass()}`}>
         <div className="p-4 border rounded-md bg-white">
-          <h3 className="text-lg font-medium mb-6">{questionnaire.title}</h3>
-          <div className="space-y-6">
-            {questionnaire.controls.map((control) => renderControl(control))}
+          <h3 className="text-lg font-medium mb-6">{questionnaire.title}</h3>          <div className="space-y-6">            {questionnaire.controls.map((control) => (
+              <div key={control.id}>
+                {renderControl(control)}
+              </div>
+            ))}
           </div>
         </div>
       </div>
