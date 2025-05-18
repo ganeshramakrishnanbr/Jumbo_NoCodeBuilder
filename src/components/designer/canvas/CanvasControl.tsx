@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuestionnaire } from '../../../contexts/QuestionnaireContext';
 import { useDragDrop } from '../../../contexts/DragDropContext';
-import { Control, ControlType, TabControl, ColumnLayoutControl } from '../../../types';
+import { Control, ControlType, TabControl, ColumnLayoutControl, AccordionControl } from '../../../types';
 import { Trash2, Settings, Move, Star } from 'lucide-react';
 import { nanoid } from 'nanoid';
 
@@ -30,18 +30,35 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
     if (draggedItem && canDropIn(targetType)) {
       e.preventDefault();
       e.stopPropagation();
+      
+      // Add visual feedback
+      if (e.currentTarget instanceof HTMLElement) {
+        e.currentTarget.classList.add('drag-over-highlight');
+      }
     }
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetType: string, tabIndex?: number, columnIndex?: number) => {
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.classList.remove('drag-over-highlight');
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetType: string, tabIndex?: number, columnIndex?: number, sectionId?: string) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Remove visual feedback
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.classList.remove('drag-over-highlight');
+    }
+
     console.log('[CanvasControl] handleDrop triggered', { 
       draggedItem, 
       targetType, 
       tabIndex, 
-      columnIndex, 
-      sectionId, 
+      columnIndex,
+      sectionId,
       parentControlId: control.id,
       parentControlType: control.type 
     });
@@ -55,157 +72,36 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
           required: false,
           visible: true,
           enabled: true,
-          properties: draggedItem.controlType === ControlType.Address ? {
-            fields: [
-              {
-                id: nanoid(),
-                type: 'textBox',
-                label: 'Address Line 1',
-                required: true,
-                validation: {
-                  minLength: 5,
-                  maxLength: 100,
-                  message: 'Address must be between 5 and 100 characters'
-                }
-              },
-              {
-                id: nanoid(),
-                type: 'textBox',
-                label: 'Address Line 2',
-                required: false,
-                validation: {
-                  maxLength: 100,
-                  message: 'Address line 2 cannot exceed 100 characters'
-                }
-              },
-              {
-                id: nanoid(),
-                type: 'textBox',
-                label: 'City',
-                required: true,
-                validation: {
-                  minLength: 2,
-                  maxLength: 50,
-                  message: 'City must be between 2 and 50 characters'
-                }
-              },
-              {
-                id: nanoid(),
-                type: 'dropdown',
-                label: 'State/Province',
-                required: true,
-                dependsOn: 'country',
-                options: [
-                  { value: 'AL', label: 'Alabama' },
-                  { value: 'AK', label: 'Alaska' },
-                  { value: 'AZ', label: 'Arizona' },
-                  { value: 'AR', label: 'Arkansas' },
-                  { value: 'CA', label: 'California' },
-                  { value: 'CO', label: 'Colorado' },
-                  { value: 'CT', label: 'Connecticut' },
-                  { value: 'DE', label: 'Delaware' },
-                  { value: 'FL', label: 'Florida' },
-                  { value: 'GA', label: 'Georgia' },
-                  { value: 'HI', label: 'Hawaii' },
-                  { value: 'ID', label: 'Idaho' },
-                  { value: 'IL', label: 'Illinois' },
-                  { value: 'IN', label: 'Indiana' },
-                  { value: 'IA', label: 'Iowa' },
-                  { value: 'KS', label: 'Kansas' },
-                  { value: 'KY', label: 'Kentucky' },
-                  { value: 'LA', label: 'Louisiana' },
-                  { value: 'ME', label: 'Maine' },
-                  { value: 'MD', label: 'Maryland' },
-                  { value: 'MA', label: 'Massachusetts' },
-                  { value: 'MI', label: 'Michigan' },
-                  { value: 'MN', label: 'Minnesota' },
-                  { value: 'MS', label: 'Mississippi' },
-                  { value: 'MO', label: 'Missouri' },
-                  { value: 'MT', label: 'Montana' },
-                  { value: 'NE', label: 'Nebraska' },
-                  { value: 'NV', label: 'Nevada' },
-                  { value: 'NH', label: 'New Hampshire' },
-                  { value: 'NJ', label: 'New Jersey' },
-                  { value: 'NM', label: 'New Mexico' },
-                  { value: 'NY', label: 'New York' },
-                  { value: 'NC', label: 'North Carolina' },
-                  { value: 'ND', label: 'North Dakota' },
-                  { value: 'OH', label: 'Ohio' },
-                  { value: 'OK', label: 'Oklahoma' },
-                  { value: 'OR', label: 'Oregon' },
-                  { value: 'PA', label: 'Pennsylvania' },
-                  { value: 'RI', label: 'Rhode Island' },
-                  { value: 'SC', label: 'South Carolina' },
-                  { value: 'SD', label: 'South Dakota' },
-                  { value: 'TN', label: 'Tennessee' },
-                  { value: 'TX', label: 'Texas' },
-                  { value: 'UT', label: 'Utah' },
-                  { value: 'VT', label: 'Vermont' },
-                  { value: 'VA', label: 'Virginia' },
-                  { value: 'WA', label: 'Washington' },
-                  { value: 'WV', label: 'West Virginia' },
-                  { value: 'WI', label: 'Wisconsin' },
-                  { value: 'WY', label: 'Wyoming' }
-                ]
-              },
-              {
-                id: nanoid(),
-                type: 'textBox',
-                label: 'ZIP/Postal Code',
-                required: true,
-                validation: {
-                  pattern: '^\\d{5}(-\\d{4})?$',
-                  message: 'Please enter a valid ZIP code (e.g., 12345 or 12345-6789)'
-                }
-              },
-              {
-                id: nanoid(),
-                type: 'dropdown',
-                label: 'Country',
-                required: true,
-                defaultValue: 'US',
-                options: [
-                  { value: 'US', label: 'United States' },
-                  { value: 'CA', label: 'Canada' },
-                  { value: 'GB', label: 'United Kingdom' },
-                  { value: 'FR', label: 'France' },
-                  { value: 'DE', label: 'Germany' },
-                  { value: 'IT', label: 'Italy' },
-                  { value: 'ES', label: 'Spain' },
-                  { value: 'AU', label: 'Australia' },
-                  { value: 'JP', label: 'Japan' },
-                  { value: 'CN', label: 'China' },
-                  { value: 'IN', label: 'India' },
-                  { value: 'BR', label: 'Brazil' },
-                  { value: 'MX', label: 'Mexico' }
-                ]
-              }
-            ]
-          } : undefined
         };
 
-        if (targetType === 'tab' && control.type === ControlType.Tab) {
+        if (targetType === 'accordion' && control.type === ControlType.Accordion && sectionId) {
+          const accordionControl = control as AccordionControl;
+          const updatedSections = accordionControl.sections.map(section => {
+            if (section.id === sectionId) {
+              return {
+                ...section,
+                controls: [...section.controls, newControlBase]
+              };
+            }
+            return section;
+          });
+          
+          updateControl(control.id, { sections: updatedSections });
+          console.log('[CanvasControl] Added new control to accordion section:', sectionId);
+        }
+        else if (targetType === 'tab' && control.type === ControlType.Tab) {
           const tabControl = control as TabControl;
-          if (!tabControl.tabs) {
-            tabControl.tabs = [{
-              id: nanoid(),
-              label: 'New Tab',
-              controls: []
-            }];
-          }
           const updatedTabs = [...tabControl.tabs];
           if (updatedTabs[tabIndex || activeTabIndex]) {
-            updatedTabs[tabIndex || activeTabIndex].controls.push(newControl);
+            updatedTabs[tabIndex || activeTabIndex].controls.push(newControlBase);
             updateControl(control.id, { tabs: updatedTabs });
           }
-        } else if (targetType === 'column' && control.type === ControlType.ColumnLayout) {
+        }
+        else if (targetType === 'column' && control.type === ControlType.ColumnLayout) {
           const columnControl = control as ColumnLayoutControl;
-          if (!columnControl.columnControls) {
-            columnControl.columnControls = Array(columnControl.columns || 2).fill([]);
-          }
           const updatedColumns = [...columnControl.columnControls];
           if (updatedColumns[columnIndex || 0]) {
-            updatedColumns[columnIndex || 0].push(newControl);
+            updatedColumns[columnIndex || 0].push(newControlBase);
             updateControl(control.id, { columnControls: updatedColumns });
           }
         }
@@ -277,6 +173,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
           <div 
             className="flex-1 p-4 bg-white"
             onDragOver={(e) => handleDragOver(e, 'tab')}
+            onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, 'tab', activeTabIndex)}
           >
             {tabControl.tabs[activeTabIndex]?.controls?.length === 0 ? (
@@ -313,6 +210,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
             className="border rounded-md p-4 bg-white"
             style={{ width: columnWidth }}
             onDragOver={(e) => handleDragOver(e, 'column')}
+            onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, 'column', undefined, index)}
           >
             <div className="text-sm text-gray-500 mb-2">Column {index + 1}</div>
@@ -327,6 +225,48 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                 Drop controls here
               </div>
             )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderAccordionControl = (accordionControl: AccordionControl) => {
+    if (!accordionControl.sections || !Array.isArray(accordionControl.sections) || accordionControl.sections.length === 0) {
+      const defaultSection = {
+        id: nanoid(),
+        label: 'Section 1',
+        controls: []
+      };
+      updateControl(control.id, { sections: [defaultSection] });
+      return null;
+    }
+
+    return (
+      <div className="space-y-4">
+        {accordionControl.sections.map((section) => (
+          <div key={section.id} className="border rounded-lg overflow-hidden bg-white">
+            <div className="bg-gray-50 px-4 py-3 border-b">
+              <h3 className="text-sm font-medium text-gray-900">{section.label}</h3>
+            </div>
+            <div 
+              className="p-4"
+              onDragOver={(e) => handleDragOver(e, 'accordion')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
+            >
+              {section.controls?.length > 0 ? (
+                <div className="space-y-3">
+                  {section.controls.map((control) => (
+                    <CanvasControl key={control.id} control={control} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-gray-400 text-center p-6 border-2 border-dashed rounded-lg">
+                  Drop controls here to add to this section
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -390,7 +330,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
             title={control.required ? 'Required' : 'Optional'}
             onClick={(e) => {
               e.stopPropagation();
-              updateControl(control.id, { required: !control.required } as Partial<Control>); // Ensure this is Partial<Control>
+              updateControl(control.id, { required: !control.required } as Partial<Control>);
             }}
           >
             <Star size={16} />
@@ -410,6 +350,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       {control.type === ControlType.Tab && renderTabControl(control as TabControl)}
       {control.type === ControlType.ColumnLayout && renderColumnLayoutControl(control as ColumnLayoutControl)}
       {control.type === ControlType.Address && renderAddressControl()}
+      {control.type === ControlType.Accordion && renderAccordionControl(control as AccordionControl)}
     </div>
   );
 };
