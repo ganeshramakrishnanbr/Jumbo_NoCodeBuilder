@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuestionnaire } from '../../../contexts/QuestionnaireContext';
-import { Smartphone, Tablet, Monitor, Eye, EyeOff, Plus } from 'lucide-react';
+import { Smartphone, Tablet, Monitor, Eye, EyeOff } from 'lucide-react';
 import { Control, ControlType, TabControl, ColumnLayoutControl, AccordionControl } from '../../../types';
 
 const PreviewTab: React.FC = () => {
