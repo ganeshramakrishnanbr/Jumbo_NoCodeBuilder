@@ -1,6 +1,6 @@
 import React from 'react';
 import { Control, AccordionControl } from '../../../types';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, AlertCircle } from 'lucide-react';
 import { nanoid } from 'nanoid';
 
 interface AccordionPropertiesProps {
@@ -10,8 +10,13 @@ interface AccordionPropertiesProps {
 
 const AccordionProperties: React.FC<AccordionPropertiesProps> = ({ control, onChange }) => {
   const accordionControl = control as AccordionControl;
+  const MAX_SECTIONS = 3;
 
   const handleAddSection = () => {
+    if (accordionControl.sections.length >= MAX_SECTIONS) {
+      return;
+    }
+
     const newSection = {
       id: nanoid(),
       label: `Section ${(accordionControl.sections || []).length + 1}`,
@@ -50,32 +55,47 @@ const AccordionProperties: React.FC<AccordionPropertiesProps> = ({ control, onCh
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-medium text-gray-700">
-              Sections
+              Sections ({accordionControl.sections.length}/{MAX_SECTIONS})
             </label>
             <button
               type="button"
               onClick={handleAddSection}
-              className="flex items-center text-sm text-blue-600 hover:text-blue-800"
+              disabled={accordionControl.sections.length >= MAX_SECTIONS}
+              className={`flex items-center text-sm ${
+                accordionControl.sections.length >= MAX_SECTIONS
+                  ? 'text-gray-400 cursor-not-allowed'
+                  : 'text-blue-600 hover:text-blue-800'
+              }`}
             >
               <Plus size={16} className="mr-1" />
               Add Section
             </button>
           </div>
           
+          {accordionControl.sections.length >= MAX_SECTIONS && (
+            <div className="flex items-center text-amber-600 text-sm mb-2">
+              <AlertCircle size={16} className="mr-1" />
+              Maximum number of sections reached
+            </div>
+          )}
+          
           <div className="space-y-2">
-            {accordionControl.sections?.map((section) => (
-              <div key={section.id} className="flex items-center border rounded-md p-2">
-                <input
-                  type="text"
-                  value={section.label}
-                  onChange={(e) => handleSectionLabelChange(section.id, e.target.value)}
-                  className="flex-1 text-sm border border-gray-300 rounded px-2 py-1"
-                />
+            {accordionControl.sections?.map((section, index) => (
+              <div key={section.id} className="flex items-center border rounded-md p-2 bg-white">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={section.label}
+                    onChange={(e) => handleSectionLabelChange(section.id, e.target.value)}
+                    className="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder={`Section ${index + 1}`}
+                  />
+                </div>
                 
                 <button
                   type="button"
                   onClick={() => handleRemoveSection(section.id)}
-                  className="ml-2 text-red-500 hover:text-red-700"
+                  className="ml-2 text-red-500 hover:text-red-700 disabled:text-gray-400"
                   disabled={accordionControl.sections.length <= 1}
                 >
                   <Trash2 size={16} />
@@ -101,6 +121,20 @@ const AccordionProperties: React.FC<AccordionPropertiesProps> = ({ control, onCh
           <label htmlFor="allowMultiple" className="ml-2 block text-sm text-gray-700">
             Allow multiple sections open
           </label>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Layout
+          </label>
+          <select
+            value={accordionControl.layout || 'vertical'}
+            onChange={(e) => onChange({ layout: e.target.value as 'vertical' | 'horizontal' })}
+            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          >
+            <option value="vertical">Vertical</option>
+            <option value="horizontal">Horizontal</option>
+          </select>
         </div>
       </div>
     </div>
