@@ -1,4 +1,3 @@
-```markdown
 # Accordion Tab Fix
 
 ## Issue Description [2024-03-22]
@@ -68,4 +67,3 @@
 - Section templates
 - Enhanced section styling options
 - Section-specific validation rules
-```
