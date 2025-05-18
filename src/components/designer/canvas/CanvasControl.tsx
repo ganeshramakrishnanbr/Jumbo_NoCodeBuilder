@@ -368,6 +368,47 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
     );
   };
 
+  const renderAccordionControl = (control: AccordionControl) => {
+    if (!control.sections) {
+      const defaultSection = {
+        id: nanoid(),
+        label: 'Section 1',
+        controls: []
+      };
+      updateControl(control.id, { sections: [defaultSection] });
+      return null;
+    }
+
+    return (
+      <div className="space-y-4">
+        {control.sections.map((section) => (
+          <div key={section.id} className="border rounded-lg overflow-hidden bg-white">
+            <div className="bg-gray-50 px-4 py-3 border-b">
+              <h3 className="text-sm font-medium text-gray-900">{section.label}</h3>
+            </div>
+            <div 
+              className="p-4"
+              onDragOver={(e) => handleDragOver(e, 'accordion')}
+              onDrop={(e) => handleDrop(e, 'accordion', undefined, section.id)}
+            >
+              {section.controls?.length > 0 ? (
+                <div className="space-y-3">
+                  {section.controls.map((control) => (
+                    <CanvasControl key={control.id} control={control} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-6 border-2 border-dashed rounded-lg text-gray-400">
+                  Drop controls here to add to this section
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div 
       className={`border rounded-lg p-4 bg-white shadow-sm hover:shadow transition-all duration-200 relative
@@ -390,7 +431,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
             title={control.required ? 'Required' : 'Optional'}
             onClick={(e) => {
               e.stopPropagation();
-              updateControl(control.id, { required: !control.required } as Partial<Control>); // Ensure this is Partial<Control>
+              updateControl(control.id, { required: !control.required } as Partial<Control>);
             }}
           >
             <Star size={16} />
@@ -410,6 +451,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       {control.type === ControlType.Tab && renderTabControl(control as TabControl)}
       {control.type === ControlType.ColumnLayout && renderColumnLayoutControl(control as ColumnLayoutControl)}
       {control.type === ControlType.Address && renderAddressControl()}
+      {control.type === ControlType.Accordion && renderAccordionControl(control as AccordionControl)}
     </div>
   );
 };
