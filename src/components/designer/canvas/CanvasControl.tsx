@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuestionnaire } from '../../../contexts/QuestionnaireContext';
 import { useDragDrop } from '../../../contexts/DragDropContext';
 import { Control, ControlType, TabControl, ColumnLayoutControl, AccordionControl } from '../../../types';
@@ -14,6 +14,14 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
   const { draggedItem, canDropIn, endDrag } = useDragDrop();
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
+
+  // Initialize expanded sections when the control is mounted
+  useEffect(() => {
+    if (control.type === ControlType.Accordion) {
+      const accordionControl = control as AccordionControl;
+      setExpandedSections(accordionControl.sections.map(section => section.id));
+    }
+  }, [control]);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -39,9 +47,9 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       controls: []
     };
 
-    updateControl(control.id, {
-      sections: [...accordionControl.sections, newSection]
-    });
+    const updatedSections = [...accordionControl.sections, newSection];
+    updateControl(control.id, { sections: updatedSections });
+    setExpandedSections(prev => [...prev, newSection.id]);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>, targetType: string) => {
@@ -152,7 +160,15 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                     ) : (
                       <div className="space-y-3">
                         {section.controls.map((childControl) => (
-                          <CanvasControl key={childControl.id} control={childControl} />
+                          <div
+                            key={childControl.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedControlId(childControl.id);
+                            }}
+                          >
+                            <CanvasControl key={childControl.id} control={childControl} />
+                          </div>
                         ))}
                       </div>
                     )}
