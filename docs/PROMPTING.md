@@ -2,12 +2,11 @@
 
 [Previous content preserved...]
 
-## Accordion Section Enhancement [2024-03-22 10:30:00]
-**User**: Can you please make sure User is able to Add sections in Accordion control. Inside the sections, the user will be placing the basic controls and will be able to drag and drop and change the order of placements of controls. Please note only 3 sections can be added in accordion controls.
+## Accordion Section Enhancement [2024-03-22 11:00:00]
+**User**: Issue is still not resolved. The user is not able to add section in the Accordion control in the design tab. The add section menu shouldn't be visible in the preview tab.
 
-**Response**: Implemented the following changes:
-1. Enhanced AccordionProperties component with section management
-2. Added section limit validation (max 3 sections)
-3. Implemented drag and drop functionality for controls within sections
-4. Added visual feedback for section limits and drag operations
-5. Created documentation in ACCORDION_TAB_FIX.md
+**Response**: Fixed the accordion control functionality:
+1. Updated DragDropContext to properly handle accordion section drops
+2. Enhanced AccordionProperties component for section management
+3. Fixed visibility of section controls in preview mode
+4. Added proper drag and drop support for accordion sections

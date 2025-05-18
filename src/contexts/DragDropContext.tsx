@@ -34,10 +34,7 @@ export const DragDropProvider: React.FC<{ children: ReactNode }> = ({ children }
     setDraggedItem(item);
     setIsDragging(true);
     
-    // Store the source container type for later reference
     sourceContainerRef.current = item.sourceId ? 'container' : 'canvas';
-    
-    // Store the source index if provided
     sourceIndexRef.current = item.sourceIndex !== undefined ? item.sourceIndex : null;
     
     console.log('[DragDropContext] Drag source:', {
@@ -65,18 +62,18 @@ export const DragDropProvider: React.FC<{ children: ReactNode }> = ({ children }
   const canDropIn = (targetType: string): boolean => {
     if (!draggedItem) return false;
 
+    // Allow dropping in accordion sections
+    if (targetType === 'accordion') {
+      return true;
+    }
+
     // Container controls can be dropped in canvas, tabs, or other containers
-    if ([ControlType.Tab, ControlType.GroupBox, ControlType.Accordion, ControlType.ColumnLayout].includes(draggedItem.controlType)) {
+    if ([ControlType.Tab, ControlType.Accordion, ControlType.ColumnLayout].includes(draggedItem.controlType)) {
       return ['canvas', 'tab', 'column'].includes(targetType);
     }
 
-    // Basic and specialized controls can be dropped anywhere except directly on the canvas
-    if (targetType === 'canvas') {
-      return false;
-    }
-
-    // Allow dropping in any container
-    return ['tab', 'column', 'accordion', 'groupbox'].includes(targetType);
+    // Basic and specialized controls can be dropped anywhere
+    return ['tab', 'column', 'accordion'].includes(targetType);
   };
 
   return (
