@@ -11,6 +11,19 @@ const PreviewTab: React.FC = () => {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [showMasked, setShowMasked] = useState<Record<string, boolean>>({});
 
+  const getViewportClass = () => {
+    switch (viewportSize) {
+      case 'mobile':
+        return 'max-w-sm mx-auto';
+      case 'tablet':
+        return 'max-w-md mx-auto';
+      case 'desktop':
+        return 'max-w-4xl mx-auto';
+      default:
+        return 'max-w-4xl mx-auto';
+    }
+  };
+
   const handleInputChange = (controlId: string, value: string) => {
     setFormValues(prev => ({
       ...prev,
