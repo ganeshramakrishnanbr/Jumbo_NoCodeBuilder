@@ -11,10 +11,11 @@ const PreviewTab: React.FC = () => {
   const [showMasked, setShowMasked] = useState<Record<string, boolean>>({});
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
-  const handleInputChange = (controlId: string, value: any) => {
+  const handleInputChange = (controlId: string, value: any, type?: ControlType) => {
+    console.log('[handleInputChange] controlId:', controlId, 'value:', value, 'type:', type);
     setFormValues(prev => ({
       ...prev,
-      [controlId]: value
+      [controlId]: type === ControlType.ToggleSlider ? Boolean(value) : value
     }));
   };
 
@@ -160,6 +161,28 @@ const PreviewTab: React.FC = () => {
     );
   };
 
+  const renderToggleSlider = (control: Control) => {
+    const checked = Boolean(formValues[control.id]);
+    return (
+      <div className="mb-4 flex items-center">
+        <label className="relative inline-flex items-center cursor-pointer">
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(e) => handleInputChange(control.id, e.target.checked, ControlType.ToggleSlider)}
+            disabled={control.enabled === false}
+            className="sr-only peer"
+          />
+          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:bg-blue-500 transition-colors duration-200">
+            <div className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-200 ${checked ? 'translate-x-5' : ''}`}></div>
+          </div>
+        </label>
+        <span className="ml-3 text-sm text-gray-700">{control.label || ''}</span>
+        {control.required && <span className="text-red-500 ml-2">*</span>}
+      </div>
+    );
+  };
+
   const renderControl = (control: Control) => {
     if (!control.visible) return null;
 
@@ -180,6 +203,8 @@ const PreviewTab: React.FC = () => {
         return renderDropdown(control);
       case ControlType.Accordion:
         return renderAccordionControl(control as AccordionControl);
+      case ControlType.ToggleSlider:
+        return renderToggleSlider(control);
       default:
         return (
           <div className="p-4 border rounded-md">
