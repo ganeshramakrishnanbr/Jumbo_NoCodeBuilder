@@ -8,6 +8,7 @@ import TextBoxProperties from './TextBoxProperties';
 import NumericProperties from './NumericProperties';
 import AddressProperties from './AddressProperties';
 import ProtectedNumberProperties from './ProtectedNumberProperties';
+import AccordionProperties from './AccordionProperties';
 
 const PropertiesPanel: React.FC = () => {
   const { questionnaire, selectedControlId, setSelectedControlId, updateControl } = useQuestionnaire();
@@ -101,9 +102,7 @@ const PropertiesPanel: React.FC = () => {
             control={selectedControl}
             onChange={updateSelectedControl}
           />
-        )}
-
-        {selectedControl.type === ControlType.Address && (
+        )}        {selectedControl.type === ControlType.Address && (
           <AddressProperties
             control={selectedControl}
             onChange={updateSelectedControl}
@@ -112,6 +111,13 @@ const PropertiesPanel: React.FC = () => {
 
         {selectedControl.type === ControlType.ProtectedNumber && (
           <ProtectedNumberProperties
+            control={selectedControl}
+            onChange={updateSelectedControl}
+          />
+        )}
+        
+        {selectedControl.type === ControlType.Accordion && (
+          <AccordionProperties
             control={selectedControl}
             onChange={updateSelectedControl}
           />

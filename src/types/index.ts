@@ -54,6 +54,13 @@ export interface AccordionControl extends Control {
   expandedSections?: string[];
   layout: 'vertical' | 'horizontal';
   maxSections: number;
+  allowMultipleExpanded?: boolean;
+  sectionConfiguration?: {
+    minHeight?: string;
+    headerStyle?: 'default' | 'bordered' | 'gradient';
+    contentPadding?: 'small' | 'medium' | 'large';
+    animationDuration?: number;
+  };
 }
 
 export interface AccordionSection {

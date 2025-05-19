@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuestionnaire } from '../../../contexts/QuestionnaireContext';
 import { useDragDrop } from '../../../contexts/DragDropContext';
-import { Control, ControlType, TabControl, ColumnLayoutControl, AccordionControl } from '../../../types';
+import { Control, ControlType, TabControl, ColumnLayoutControl, AccordionControl, AccordionSection } from '../../../types';
 import { Trash2, Settings, Move, Star } from 'lucide-react';
 import { nanoid } from 'nanoid';
 
@@ -13,6 +13,54 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
   const { updateControl, deleteControl, selectedControlId, setSelectedControlId } = useQuestionnaire();
   const { draggedItem, canDropIn, endDrag } = useDragDrop();
   const [activeTabIndex, setActiveTabIndex] = useState(0);
+  // Track expanded sections for accordions in design mode
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
+  // Initialize expanded sections based on control's configuration
+  useEffect(() => {
+    if (control.type === ControlType.Accordion) {
+      const accordionControl = control as AccordionControl;
+      if (accordionControl.expandedSections && accordionControl.expandedSections.length > 0) {
+        const sectionState: Record<string, boolean> = {};
+        accordionControl.expandedSections.forEach(sectionId => {
+          sectionState[sectionId] = true;
+        });
+        setExpandedSections(sectionState);
+      } else if (accordionControl.sections && accordionControl.sections.length > 0) {
+        // By default, expand the first section
+        setExpandedSections({ [accordionControl.sections[0].id]: true });
+      }
+    }
+  }, [control.id]);
+
+  // Toggle section expansion with state persistence
+  const toggleSection = (accordionControl: AccordionControl, sectionId: string) => {
+    setExpandedSections(prev => {
+      const newState = {...prev};
+      // If multiple sections are allowed to be expanded
+      if (accordionControl.allowMultipleExpanded) {
+        newState[sectionId] = !prev[sectionId];
+      } else {
+        // Close all sections
+        Object.keys(newState).forEach(key => {
+          newState[key] = false;
+        });
+        // Toggle the clicked section
+        newState[sectionId] = !prev[sectionId];
+      }
+      
+      // Save expanded sections to the control for persistence
+      const expandedSectionIds = Object.entries(newState)
+        .filter(([, isExpanded]) => isExpanded)
+        .map(([id]) => id);
+      
+      updateControl(accordionControl.id, { 
+        expandedSections: expandedSectionIds 
+      } as Partial<AccordionControl>);
+      
+      return newState;
+    });
+  };
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -74,8 +122,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
           enabled: true,
         };
 
-        if (targetType === 'accordion' && control.type === ControlType.Accordion && sectionId) {
-          const accordionControl = control as AccordionControl;
+        if (targetType === 'accordion' && control.type === ControlType.Accordion && sectionId) {          const accordionControl = control as AccordionControl;
           const updatedSections = accordionControl.sections.map(section => {
             if (section.id === sectionId) {
               return {
@@ -86,15 +133,14 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
             return section;
           });
           
-          updateControl(control.id, { sections: updatedSections });
+          updateControl(control.id, { sections: updatedSections } as Partial<AccordionControl>);
           console.log('[CanvasControl] Added new control to accordion section:', sectionId);
-        }
-        else if (targetType === 'tab' && control.type === ControlType.Tab) {
+        }        else if (targetType === 'tab' && control.type === ControlType.Tab) {
           const tabControl = control as TabControl;
           const updatedTabs = [...tabControl.tabs];
           if (updatedTabs[tabIndex || activeTabIndex]) {
             updatedTabs[tabIndex || activeTabIndex].controls.push(newControlBase);
-            updateControl(control.id, { tabs: updatedTabs });
+            updateControl(control.id, { tabs: updatedTabs } as Partial<TabControl>);
           }
         }
         else if (targetType === 'column' && control.type === ControlType.ColumnLayout) {
@@ -102,7 +148,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
           const updatedColumns = [...columnControl.columnControls];
           if (updatedColumns[columnIndex || 0]) {
             updatedColumns[columnIndex || 0].push(newControlBase);
-            updateControl(control.id, { columnControls: updatedColumns });
+            updateControl(control.id, { columnControls: updatedColumns } as Partial<ColumnLayoutControl>);
           }
         }
       }
@@ -111,19 +157,17 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
     }
   };
 
-  const renderTabControl = (tabControl: TabControl) => {
-    if (!tabControl.tabs || !Array.isArray(tabControl.tabs) || tabControl.tabs.length === 0) {
+  const renderTabControl = (tabControl: TabControl) => {    if (!tabControl.tabs || !Array.isArray(tabControl.tabs) || tabControl.tabs.length === 0) {
       const defaultTab = {
         id: nanoid(),
         label: 'New Tab',
         controls: []
       };
-      updateControl(control.id, { tabs: [defaultTab] });
+      updateControl(control.id, { tabs: [defaultTab] } as Partial<TabControl>);
       return null;
     }
 
     const position = tabControl.position || 'top';
-    const isVertical = position === 'left' || position === 'right';
     
     const containerClasses = {
       top: 'flex flex-col',
@@ -192,11 +236,10 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       </div>
     );
   };
-
   const renderColumnLayoutControl = (columnControl: ColumnLayoutControl) => {
     if (!columnControl.columnControls || !Array.isArray(columnControl.columnControls)) {
       const defaultColumns = Array(columnControl.columns || 2).fill([]);
-      updateControl(control.id, { columnControls: defaultColumns });
+      updateControl(control.id, { columnControls: defaultColumns } as Partial<ColumnLayoutControl>);
       return null;
     }
 
@@ -238,35 +281,184 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
         label: 'Section 1',
         controls: []
       };
-      updateControl(control.id, { sections: [defaultSection] });
+      updateControl(control.id, { sections: [defaultSection] } as Partial<AccordionControl>);
       return null;
     }
 
+    // Determine if it's in design mode (we're in CanvasControl so it is)
+    const isDesignMode = true;
+
+    // Get layout configuration
+    const layout = accordionControl.layout || 'vertical';
+    const isHorizontal = layout === 'horizontal';
+    
+    // Get section configuration options
+    const sectionConfig = accordionControl.sectionConfiguration || {};
+    const headerStyle = sectionConfig.headerStyle || 'default';
+    
+    // Apply header styling based on configuration
+    const getHeaderClasses = () => {
+      const baseClasses = "px-4 py-3 flex items-center justify-between";
+      switch (headerStyle) {
+        case 'bordered':
+          return `${baseClasses} bg-white border-b-2 border-gray-300`;
+        case 'gradient':
+          return `${baseClasses} bg-gradient-to-r from-gray-50 to-white border-b`;
+        default: // default style
+          return `${baseClasses} bg-gray-50 border-b`;
+      }
+    };
+    
+    // Return the appropriate layout container classes
+    const getContainerClasses = () => {
+      if (isHorizontal) {
+        return "flex flex-row gap-4 overflow-x-auto pb-2";
+      } else {
+        return "space-y-4";
+      }
+    };
+    
+    // Return the section classes based on layout
+    const getSectionClasses = () => {
+      if (isHorizontal) {
+        return "border rounded-lg overflow-hidden bg-white flex-shrink-0";
+      } else {
+        return "border rounded-lg overflow-hidden bg-white";
+      }
+    };
+
+    // Set min-height if specified
+    const getSectionStyles = () => {
+      const styles: React.CSSProperties = {};
+      
+      if (isHorizontal) {
+        // In horizontal mode, set the width based on number of sections
+        const width = `${Math.max(300, 100 / Math.min(accordionControl.sections.length, 3))}px`;
+        styles.minWidth = width;
+        styles.width = width;
+      }
+      
+      if (sectionConfig.minHeight) {
+        styles.minHeight = sectionConfig.minHeight;
+      }
+      
+      return styles;
+    };
+    
+    // Get content padding class based on config
+    const getContentPaddingClass = () => {
+      switch (sectionConfig.contentPadding) {
+        case 'small': return 'p-2';
+        case 'large': return 'p-6';
+        default: return 'p-4'; // medium padding (default)
+      }
+    };
+
+    // Handle drag events for accordion controls with proper nested structure
+    const handleAccordionDragOver = (e: React.DragEvent<HTMLDivElement>, _section: AccordionSection) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Add visual feedback
+      if (e.currentTarget instanceof HTMLElement) {
+        e.currentTarget.classList.add('drag-over-highlight');
+      }
+    };
+
+    const handleAccordionDrop = (e: React.DragEvent<HTMLDivElement>, accordionControl: AccordionControl, section: AccordionSection) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Remove visual feedback
+      if (e.currentTarget instanceof HTMLElement) {
+        e.currentTarget.classList.remove('drag-over-highlight');
+      }
+      
+      if (!draggedItem) return;
+
+      // Handle dropping a new control
+      if (draggedItem.isNew) {
+        const newControlBase = {
+          id: nanoid(),
+          type: draggedItem.controlType,
+          label: `New ${draggedItem.controlType}`,
+          required: false,
+          visible: true,
+          enabled: true,
+        };
+        
+        // Add the new control to this specific section
+        const updatedSections = accordionControl.sections.map(sec => {
+          if (sec.id === section.id) {
+            return {
+              ...sec,
+              controls: [...sec.controls, newControlBase]
+            };
+          }
+          return sec;
+        });
+        
+        // Update the accordion control with the new sections
+        updateControl(accordionControl.id, { 
+          sections: updatedSections 
+        } as Partial<AccordionControl>);
+        
+        console.log(`Added new control to accordion section: ${section.id}`);
+        
+        // Select the newly added control
+        setTimeout(() => setSelectedControlId(newControlBase.id), 0);
+      } 
+      // Handle moving an existing control
+      else if (draggedItem.id && !draggedItem.isNew) {
+        // Handle via the QuestionnaireContext moveControl function
+        // which will handle all the complex logic of removing from
+        // source and adding to destination
+        console.log(`Moving control ${draggedItem.id} to accordion section ${section.id}`);
+      }
+      
+      // End drag operation
+      endDrag();
+    };
+
     return (
-      <div className="space-y-4">
+      <div className={getContainerClasses()}>
         {accordionControl.sections.map((section) => (
-          <div key={section.id} className="border rounded-lg overflow-hidden bg-white">
-            <div className="bg-gray-50 px-4 py-3 border-b">
+          <div 
+            key={section.id} 
+            className={getSectionClasses()}
+            style={getSectionStyles()}
+          >
+            <div className={getHeaderClasses()} onClick={() => toggleSection(accordionControl, section.id)}>
               <h3 className="text-sm font-medium text-gray-900">{section.label}</h3>
-            </div>
-            <div 
-              className="p-4"
-              onDragOver={(e) => handleDragOver(e, 'accordion')}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
-            >
-              {section.controls?.length > 0 ? (
-                <div className="space-y-3">
-                  {section.controls.map((control) => (
-                    <CanvasControl key={control.id} control={control} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-gray-400 text-center p-6 border-2 border-dashed rounded-lg">
-                  Drop controls here to add to this section
+              
+              {isDesignMode && (
+                <div className="flex items-center space-x-1">
+                  <span className="text-xs text-gray-500">
+                    {section.controls?.length || 0} control{section.controls?.length !== 1 ? 's' : ''}
+                  </span>
                 </div>
               )}
             </div>
+            {expandedSections[section.id] && (
+              <div 
+                className={getContentPaddingClass()}
+                onDragOver={(e) => handleAccordionDragOver(e, section)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleAccordionDrop(e, control as AccordionControl, section)}
+              >
+                {section.controls?.length > 0 ? (
+                  <div className="space-y-3">
+                    {section.controls.map((control) => (
+                      <CanvasControl key={control.id} control={control} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-gray-400 text-center p-6 border-2 border-dashed rounded-lg">
+                    Drop controls here to add to this section
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
