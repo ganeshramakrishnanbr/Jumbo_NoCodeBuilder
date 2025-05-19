@@ -17,13 +17,14 @@ const PreviewTab: React.FC = () => {
       [controlId]: value
     }));
   };
-
-  const toggleAccordionSection = (accordionId: string, sectionId: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [`${accordionId}_${sectionId}`]: !prev[`${accordionId}_${sectionId}`]
-    }));
-  };
+  // This handler is replaced by the more advanced version in renderAccordionControl
+  // to support multiple section expansion
+  // const toggleAccordionSection = (accordionId: string, sectionId: string) => {
+  //   setExpandedSections(prev => ({
+  //     ...prev,
+  //     [`${accordionId}_${sectionId}`]: !prev[`${accordionId}_${sectionId}`]
+  //   }));
+  // };
 
   const renderLabel = (label: string, required?: boolean) => (
     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -58,9 +59,8 @@ const PreviewTab: React.FC = () => {
         <div className="space-y-2">
           {options.map((option: any) => (
             <div key={option.id} className="flex items-center">
-              <input
-                type="checkbox"
-                checked={formValues[`${control.id}_${option.id}`] || false}
+              <input                type="checkbox"
+                checked={Boolean(formValues[`${control.id}_${option.id}`])}
                 onChange={(e) => handleInputChange(`${control.id}_${option.id}`, e.target.checked)}
                 disabled={!control.enabled}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
@@ -121,19 +121,127 @@ const PreviewTab: React.FC = () => {
   const renderAccordionControl = (control: AccordionControl) => {
     if (!control.sections) return null;
 
+    // Get layout configuration
+    const layout = control.layout || 'vertical';
+    const isHorizontal = layout === 'horizontal';
+    
+    // Get section configuration options
+    const sectionConfig = control.sectionConfiguration || {};
+    const headerStyle = sectionConfig.headerStyle || 'default';
+    const animationDuration = sectionConfig.animationDuration || 300;
+    
+    // Function to handle section click, respecting allowMultipleExpanded setting
+    const handleSectionClick = (accordionId: string, sectionId: string) => {
+      setExpandedSections(prev => {
+        const newState = {...prev};
+        const currentKey = `${accordionId}_${sectionId}`;
+        
+        // If multiple sections can be expanded, simply toggle the clicked section
+        if (control.allowMultipleExpanded) {
+          newState[currentKey] = !prev[currentKey];
+        } else {
+          // If we don't allow multiple expanded, close other sections from this accordion
+          Object.keys(prev).forEach(key => {
+            if (key.startsWith(`${accordionId}_`) && key !== currentKey) {
+              newState[key] = false;
+            }
+          });
+          // Toggle the current section
+          newState[currentKey] = !prev[currentKey];
+        }
+        
+        return newState;
+      });
+    };
+    
+    // Apply header styling based on configuration
+    const getHeaderClasses = (isExpanded: boolean) => {
+      const baseClasses = "w-full px-4 py-3 flex items-center justify-between text-left transition-colors";
+      const activeClass = isExpanded ? "bg-blue-50 text-blue-800" : "hover:bg-gray-100";
+      
+      switch (headerStyle) {
+        case 'bordered':
+          return `${baseClasses} ${activeClass} bg-white border-b-2 ${isExpanded ? 'border-blue-400' : 'border-gray-200'}`;
+        case 'gradient':
+          return `${baseClasses} ${activeClass} ${isExpanded ? 
+            'bg-gradient-to-r from-blue-50 to-white' : 
+            'bg-gradient-to-r from-gray-50 to-white hover:from-gray-100'}`;
+        default: // default style
+          return `${baseClasses} ${activeClass} ${isExpanded ? 'bg-blue-50' : 'bg-gray-50'}`;
+      }
+    };
+    
+    // Return the appropriate layout container classes
+    const getContainerClasses = () => {
+      if (isHorizontal) {
+        return "flex flex-row gap-4 overflow-x-auto pb-2";
+      } else {
+        return "space-y-2";
+      }
+    };
+    
+    // Return the section classes based on layout
+    const getSectionClasses = () => {
+      if (isHorizontal) {
+        return "border rounded-lg overflow-hidden flex-shrink-0";
+      } else {
+        return "border rounded-lg overflow-hidden";
+      }
+    };
+
+    // Set min-height if specified
+    const getSectionStyles = () => {
+      const styles: React.CSSProperties = {};
+      
+      if (isHorizontal) {
+        // In horizontal mode, set the width based on number of sections
+        const width = `${Math.max(300, 100 / Math.min(control.sections.length, 3))}px`;
+        styles.minWidth = width;
+        styles.width = width;
+      }
+      
+      if (sectionConfig.minHeight) {
+        styles.minHeight = sectionConfig.minHeight;
+      }
+      
+      return styles;
+    };
+    
+    // Get content padding class based on config
+    const getContentPaddingClass = () => {
+      switch (sectionConfig.contentPadding) {
+        case 'small': return 'p-2';
+        case 'large': return 'p-6';
+        default: return 'p-4'; // medium padding (default)
+      }
+    };
+    
+    // Animation style based on configuration
+    const getAnimationStyle = (isExpanded: boolean) => {
+      return {
+        maxHeight: isExpanded ? '2000px' : '0',
+        overflow: 'hidden',
+        transition: `max-height ${animationDuration}ms ease-in-out`,
+      };
+    };
+
     return (
-      <div className="space-y-2">
+      <div className={getContainerClasses()}>
         {control.sections.map((section) => {
           const isExpanded = expandedSections[`${control.id}_${section.id}`];
           return (
-            <div key={section.id} className="border rounded-lg overflow-hidden">
+            <div 
+              key={section.id} 
+              className={getSectionClasses()}
+              style={getSectionStyles()}
+            >
               <button
-                className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between text-left"
-                onClick={() => toggleAccordionSection(control.id, section.id)}
+                className={getHeaderClasses(isExpanded)}
+                onClick={() => handleSectionClick(control.id, section.id)}
               >
-                <span className="font-medium text-gray-900">{section.label}</span>
+                <span className="font-medium text-inherit">{section.label}</span>
                 <svg
-                  className={`w-5 h-5 transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                  className={`w-5 h-5 transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -142,17 +250,19 @@ const PreviewTab: React.FC = () => {
                 </svg>
               </button>
               
-              {isExpanded && (
-                <div className="p-4 bg-white">
-                  {section.controls.length > 0 ? (
-                    <div className="space-y-4">
-                      {section.controls.map((control) => renderControl(control))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">No controls in this section</p>
-                  )}
-                </div>
-              )}
+              <div style={getAnimationStyle(isExpanded)}>
+                {isExpanded && (
+                  <div className={`bg-white ${getContentPaddingClass()}`}>
+                    {section.controls.length > 0 ? (
+                      <div className="space-y-4">
+                        {section.controls.map((control) => renderControl(control))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">No controls in this section</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}
@@ -189,11 +299,9 @@ const PreviewTab: React.FC = () => {
         );
     }
   };
-
   const renderTabControl = (tabControl: TabControl) => {
     const currentTabIndex = activeTabIndices[tabControl.id] || 0;
     const position = tabControl.position || 'top';
-    const isVertical = position === 'left' || position === 'right';
     
     const containerClasses = {
       top: 'flex flex-col',
@@ -311,6 +419,22 @@ const PreviewTab: React.FC = () => {
         return 'w-full';
     }
   };
+  // Toggle layout mode for accordions (vertical/horizontal)
+  // This is a demonstration function that would work with a real implementation
+  // that can modify the control in preview mode
+  /* const toggleAccordionLayout = (accordionId: string) => {
+    const accordion = questionnaire.controls.find(control => 
+      control.id === accordionId && control.type === ControlType.Accordion
+    ) as AccordionControl | undefined;
+    
+    if (!accordion) return;
+    
+    const updatedLayout = accordion.layout === 'vertical' ? 'horizontal' : 'vertical';
+    
+    // This should be handled by the QuestionnaireContext, but for demo purposes
+    // we're just showing the UI toggle functionality
+    console.log(`Toggling accordion ${accordionId} layout to ${updatedLayout}`);
+  }; */
 
   return (
     <div className="h-full flex flex-col">
