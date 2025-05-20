@@ -293,7 +293,34 @@ const PreviewTab: React.FC = () => {
     );
   };
 
-  const renderControl = (control: Control) => {
+  const renderNumeric = (control: Control) => {
+    const min = control.properties?.min ?? 0;
+    const max = control.properties?.max ?? 100;
+    const step = control.properties?.step ?? 1;
+    
+    return (
+      <div className="mb-4">
+        {renderLabel(control.label || 'Number of digits', control.required)}
+        <div className="flex flex-col">
+          <input
+            type="number"
+            value={formValues[control.id] || ''}
+            onChange={(e) => handleInputChange(control.id, e.target.value)}
+            min={min}
+            max={max}
+            step={step}
+            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            required={control.required}
+          />
+          <div className="mt-1 text-xs text-gray-500">
+            Valid range: {min} - {max}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+const renderControl = (control: Control) => {
     if (!control.visible) return null;
 
     switch (control.type) {
@@ -315,6 +342,8 @@ const PreviewTab: React.FC = () => {
         return renderAccordionControl(control as AccordionControl);
       case ControlType.ToggleSlider:
         return renderToggleSlider(control);
+      case ControlType.Numeric:
+        return renderNumeric(control);
       default:
         return (
           <div className="p-4 border rounded-md">

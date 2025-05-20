@@ -186,3 +186,47 @@
 - Confirmed parent controls (Tab, Accordion, ColumnLayout) properties now display correctly
 - Tested all control types to ensure proper property panel functionality
 - Verified drag and drop functionality works correctly for all parent control types
+
+## [0.2.0] - 2025-05-21
+
+### Preview Mode Control Fixes
+
+#### Bug Fixes
+- Fixed numeric control rendering in the Preview tab
+- Added proper implementation of numeric controls in the PreviewTab component
+- Ensured numeric labels and valid range information display correctly
+- Fixed consistent preview rendering across all control types
+
+#### Improvements
+- Enhanced numeric input with min/max/step configuration
+- Added validation feedback for numeric inputs
+- Improved preview tab rendering consistency
+
+#### Documentation
+- Created detailed documentation in the PREVIEW_DESIGN_CONTROL_FIX folder
+- Added comprehensive testing guide for preview functionality 
+- Updated developer reference with rendering guidelines
+- Added visual troubleshooting guide for preview mode issues
+
+## [0.1.9] - 2025-06-01
+
+### ColumnLayout Controls Fix
+
+#### Bug Fixes
+- Fixed critical error in the Properties Panel when selecting ColumnLayout controls
+- Fixed incorrect property access in the flattenControls function where it was trying to iterate over `columns` (a number) instead of `columnControls` (array of control arrays)
+- Fixed similar issue in the debugUtils.ts where getChildCount function was using `columns.reduce()` on a number property
+- Resolved errors in drag and drop functionality for ColumnLayout controls
+- Improved type safety when iterating through nested control structures
+
+#### Improvements
+- Enhanced error handling for nested control structures
+- Improved logging for control property access
+- Ensured consistent property panel behavior for all container control types
+- Fixed "control.columns.reduce is not a function" error during drag-and-drop operations
+
+#### Testing and Validation
+- Verified fix resolves "columnControl.columns?.forEach is not a function" error
+- Confirmed parent controls (Tab, Accordion, ColumnLayout) properties now display correctly
+- Tested all control types to ensure proper property panel functionality
+- Verified drag and drop functionality works correctly for all parent control types
