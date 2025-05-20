@@ -87,3 +87,57 @@
 - Export to different formats
 - Advanced validation rules
 - Custom styling options
+
+## [0.1.4] - 2025-05-20
+
+### Drag-and-Drop Framework Enhancements (LOG4)
+
+#### Fixes and Improvements
+- Fixed issue with first position controls not being properly draggable
+- Enhanced Tab control movement to work from any position to any other position
+- Improved UI refresh mechanism for consistent rendering after drag operations
+- Fixed React hooks implementation in CanvasControl component
+- Added comprehensive logging for debugging drag operations
+- Enhanced TypeScript type safety throughout the drag-and-drop framework
+- Fixed runtime error: "questionnaire is not defined" in CanvasControl.tsx when dragging controls
+
+#### New Utilities
+- Added `moveFirstControl` utility for consistent handling of first position controls
+- Added `moveControlInArray` utility for general control movement
+- Implemented `forceUIRefresh` for consistent DOM updates
+- Added direct control array manipulation via `updateQuestionnaireControls`
+
+#### Testing and Validation
+- Created comprehensive test matrix covering all drag-and-drop scenarios
+- Validated fixes across multiple browsers (Chrome, Firefox, Edge, Safari)
+- Fixed browser-specific issues for consistent cross-browser functionality
+- Documented all test cases and results for future reference
+
+## [0.1.5] - 2025-05-20
+
+### Parent Control Drag-and-Drop Enhancement (LOG6)
+
+#### Fixes and Improvements
+- Fixed issue where parent controls (Tab, Accordion, ColumnLayout) could not be repositioned after initial placement
+- Added dedicated handling for all parent control types in drag-and-drop operations
+- Enhanced visual feedback during parent control dragging
+- Fixed index calculation issues during parent control movements
+- Added comprehensive logging for drag-and-drop operations
+
+#### New Utilities
+- Added `moveParentControl` utility for consistent parent control movement
+- Enhanced event handling for complex nested controls
+- Fixed event propagation issues in drag-and-drop operations
+- Created `debugUtils.ts` with logging and validation utilities
+- Added `testParentControls.ts` for automated testing of parent control movement
+- Implemented `browserTestHelpers.ts` for browser console testing
+
+#### Testing and Validation
+- Created comprehensive test matrix for parent control dragging
+- Added validation utilities to ensure control integrity during movement
+- Implemented automated testing script for parent control drag-and-drop
+- Created browser console helpers for manual testing and debugging
+- Added structure validation to prevent control corruption
+- Validated fixes across multiple browsers (Chrome, Firefox, Edge, Safari)
+- Fixed browser-specific visual glitches for consistent cross-browser functionality
+- Documented all test cases and results for future reference
