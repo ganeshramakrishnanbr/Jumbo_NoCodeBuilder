@@ -48,10 +48,9 @@ const getChildCount = (control: Control): number => {
       return control.tabs ? control.tabs.reduce((sum, tab) => sum + (tab.controls?.length || 0), 0) : 0;
     case ControlType.Accordion:
       // @ts-ignore - Assuming AccordionControl has sections property
-      return control.sections ? control.sections.reduce((sum, section) => sum + (section.controls?.length || 0), 0) : 0;
-    case ControlType.ColumnLayout:
-      // @ts-ignore - Assuming ColumnLayoutControl has columns property
-      return control.columns ? control.columns.reduce((sum, column) => sum + (column.controls?.length || 0), 0) : 0;
+      return control.sections ? control.sections.reduce((sum, section) => sum + (section.controls?.length || 0), 0) : 0;    case ControlType.ColumnLayout:
+      // @ts-ignore - Assuming ColumnLayoutControl has columnControls property
+      return control.columnControls ? control.columnControls.reduce((sum, column) => sum + (column.length || 0), 0) : 0;
     default:
       return 0;
   }

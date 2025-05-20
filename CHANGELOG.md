@@ -141,3 +141,48 @@
 - Validated fixes across multiple browsers (Chrome, Firefox, Edge, Safari)
 - Fixed browser-specific visual glitches for consistent cross-browser functionality
 - Documented all test cases and results for future reference
+
+## [0.1.8] - 2025-05-20
+
+### Properties Panel Fix for Parent Controls
+
+#### Bug Fixes
+- Fixed issue where parent control properties were not displayed in the Properties Panel
+- Updated control flattening algorithm to correctly handle Accordion controls
+- Fixed property name used for ColumnLayout child control access (using `columnControls` instead of `columns`)
+- Ensured proper traversal of nested control structures
+
+#### Improvements
+- Enhanced control selection functionality for complex nested controls
+- Improved user experience when working with Tab, Accordion, and ColumnLayout controls
+- Fixed property editing for all parent control types
+- Ensured consistent behavior across all control types
+
+#### Testing and Documentation
+- Created comprehensive test suite with 16 test cases across all parent control types
+- Achieved 100% test pass rate for all control property editing scenarios
+- Added detailed documentation in the ISSUE folder with Plan and Act sections
+- Documented the issue investigation, implementation, and resolution process
+
+## [0.1.9] - 2025-06-01
+
+### ColumnLayout Controls Fix
+
+#### Bug Fixes
+- Fixed critical error in the Properties Panel when selecting ColumnLayout controls
+- Fixed incorrect property access in the flattenControls function where it was trying to iterate over `columns` (a number) instead of `columnControls` (array of control arrays)
+- Fixed similar issue in the debugUtils.ts where getChildCount function was using `columns.reduce()` on a number property
+- Resolved errors in drag and drop functionality for ColumnLayout controls
+- Improved type safety when iterating through nested control structures
+
+#### Improvements
+- Enhanced error handling for nested control structures
+- Improved logging for control property access
+- Ensured consistent property panel behavior for all container control types
+- Fixed "control.columns.reduce is not a function" error during drag-and-drop operations
+
+#### Testing and Validation
+- Verified fix resolves "columnControl.columns?.forEach is not a function" error
+- Confirmed parent controls (Tab, Accordion, ColumnLayout) properties now display correctly
+- Tested all control types to ensure proper property panel functionality
+- Verified drag and drop functionality works correctly for all parent control types

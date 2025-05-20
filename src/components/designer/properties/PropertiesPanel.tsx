@@ -12,8 +12,7 @@ import AccordionProperties from './AccordionProperties';
 
 const PropertiesPanel: React.FC = () => {
   const { questionnaire, selectedControlId, setSelectedControlId, updateControl } = useQuestionnaire();
-  
-  const flattenControls = (controls: Control[]): Control[] => {
+    const flattenControls = (controls: Control[]): Control[] => {
     let result: Control[] = [];
     
     if (!Array.isArray(controls)) return result;
@@ -30,13 +29,24 @@ const PropertiesPanel: React.FC = () => {
         });
       }
       
-      if (control.type === ControlType.ColumnLayout) {
-        const columnControl = control as any;
-        columnControl.columnControls?.forEach((column: Control[]) => {
-          if (Array.isArray(column)) {
-            result = [...result, ...flattenControls(column)];
+      if (control.type === ControlType.Accordion) {
+        const accordionControl = control as any;
+        accordionControl.sections?.forEach((section: any) => {
+          if (Array.isArray(section.controls)) {
+            result = [...result, ...flattenControls(section.controls)];
           }
         });
+      }
+      
+      if (control.type === ControlType.ColumnLayout) {
+        const columnControl = control as any;
+        if (Array.isArray(columnControl.columnControls)) {
+          columnControl.columnControls.forEach((columnControlArray: any) => {
+            if (Array.isArray(columnControlArray)) {
+              result = [...result, ...flattenControls(columnControlArray)];
+            }
+          });
+        }
       }
     }
     
