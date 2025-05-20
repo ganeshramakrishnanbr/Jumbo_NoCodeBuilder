@@ -27,30 +27,25 @@ export const DragDropProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [draggedItem, setDraggedItem] = useState<DragItem | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const sourceContainerRef = useRef<string | null>(null);
-  const sourceIndexRef = useRef<number | null>(null);  const startDrag = (item: DragItem) => {
-    console.log('[DRAG-DEBUG] Starting drag operation:', item);
+  const sourceIndexRef = useRef<number | null>(null);
+
+  const startDrag = (item: DragItem) => {
+    console.log('[DragDropContext] Starting drag operation:', item);
     setDraggedItem(item);
     setIsDragging(true);
     
     // Improved source tracking
-    sourceContainerRef.current = item.sourceId || 'canvas';
+    sourceContainerRef.current = item.sourceId ? item.sourceId : 'canvas';
     sourceIndexRef.current = item.sourceIndex !== undefined ? item.sourceIndex : null;
     
-    console.log('[DRAG-DEBUG] Drag source detailed:', {
+    console.log('[DragDropContext] Drag source:', {
       container: sourceContainerRef.current,
-      index: sourceIndexRef.current,
-      controlType: item.controlType,
-      isFirstItem: item.sourceIndex === 0,
-      isTab: item.controlType === ControlType.Tab
+      index: sourceIndexRef.current
     });
   };
 
   const endDrag = () => {
-    console.log('[DRAG-DEBUG] Ending drag operation', {
-      wasFirstItem: sourceIndexRef.current === 0,
-      sourceContainer: sourceContainerRef.current,
-      lastDraggedItem: draggedItem
-    });
+    console.log('[DragDropContext] Ending drag operation');
     setDraggedItem(null);
     setIsDragging(false);
     sourceContainerRef.current = null;
@@ -64,6 +59,7 @@ export const DragDropProvider: React.FC<{ children: ReactNode }> = ({ children }
   const getSourceIndex = (): number | null => {
     return sourceIndexRef.current;
   };
+
   const canDropIn = (targetType: string): boolean => {
     if (!draggedItem) return false;
 

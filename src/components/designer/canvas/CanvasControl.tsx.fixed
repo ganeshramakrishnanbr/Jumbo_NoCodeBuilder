@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useQuestionnaire } from '../../../contexts/QuestionnaireContext';
 import { useDragDrop } from '../../../contexts/DragDropContext';
 import { Control, ControlType, TabControl, ColumnLayoutControl, AccordionControl } from '../../../types';
-import { Trash2, Move, Star } from 'lucide-react';
+import { Trash2, Settings, Move, Star } from 'lucide-react';
 import { nanoid } from 'nanoid';
 
 interface CanvasControlProps {
@@ -10,7 +10,7 @@ interface CanvasControlProps {
 }
 
 const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
-  const { updateControl, deleteControl, selectedControlId, setSelectedControlId, moveControl, questionnaire } = useQuestionnaire();
+  const { updateControl, deleteControl, selectedControlId, setSelectedControlId, moveControl } = useQuestionnaire();
   const { draggedItem, canDropIn, endDrag, startDrag } = useDragDrop();
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [dragOverPosition, setDragOverPosition] = useState<number | null>(null);
@@ -61,7 +61,9 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       
       return newState;
     });
-  };  const handleClick = (e: React.MouseEvent) => {
+  };  
+  
+  const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedControlId(control.id);
   };
@@ -71,65 +73,19 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
     if (confirm(`Are you sure you want to delete this ${control.type}?`)) {
       deleteControl(control.id);
     }
-  };  // Enhanced drag handlers for controls
-  const handleDragStart = (e: React.DragEvent<HTMLSpanElement>) => {
+  };
+  
+  // Enhanced drag start handler for child controls
+  const handleDragStart = (e: React.DragEvent<HTMLSpanElement>, controlId: string, sourceIndex?: number) => {
     e.stopPropagation();
     
     // Set data transfer for compatibility
-    e.dataTransfer.setData('text/plain', control.id);
+    e.dataTransfer.setData('text/plain', controlId);
     e.dataTransfer.effectAllowed = 'move';
-    
-    // Get the control's index from the current questionnaire available from the context
-    const sourceIndex = questionnaire.controls.findIndex((c: Control) => c.id === control.id);
-    
-    // Check if this is a parent control type
-    const isParentControl = [ControlType.Tab, ControlType.Accordion, ControlType.ColumnLayout].includes(control.type);
-    
-    console.log('[DRAG-DEBUG] Starting drag in CanvasControl:', {
-      controlId: control.id, 
-      controlType: control.type,
-      sourceIndex: sourceIndex,
-      isFirstControl: sourceIndex === 0,
-      isParentControl: isParentControl
-    });
     
     // Start drag operation with better source tracking
     startDrag({
-      id: control.id,
-      type: 'control',
-      controlType: control.type,
-      isNew: false,
-      sourceId: control.id,
-      sourceIndex: sourceIndex 
-    });
-    
-    console.log('[CanvasControl] Started dragging control:', control.id, 'from container:', control.id, 'at index:', sourceIndex);
-    
-    // Add visual feedback during drag - with null check for e.currentTarget
-    if (e.currentTarget && e.currentTarget.parentElement instanceof HTMLElement) {
-      setTimeout(() => {
-        if (e.currentTarget.parentElement) {
-          e.currentTarget.parentElement.classList.add('opacity-50');
-          
-          // Add special class for parent controls to enhance visual feedback
-          if (isParentControl) {
-            e.currentTarget.parentElement.classList.add('parent-control-dragging');
-          }
-        }
-      }, 0);
-    }
-  };
-  // Child control drag handler with source tracking
-  const handleChildDragStart = (e: React.DragEvent<HTMLSpanElement>, childId: string, sourceIndex: number) => {
-    e.stopPropagation();
-    
-    // Set data transfer for compatibility
-    e.dataTransfer.setData('text/plain', childId);
-    e.dataTransfer.effectAllowed = 'move';
-    
-    // Start drag operation with source tracking
-    startDrag({
-      id: childId,
+      id: controlId,
       type: 'control',
       controlType: control.type,
       isNew: false,
@@ -137,17 +93,22 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       sourceIndex: sourceIndex
     });
     
-    console.log('[CanvasControl] Started dragging child control:', childId, 'from container:', control.id, 'at index:', sourceIndex);
+    console.log('[CanvasControl] Started dragging control:', controlId, 'from container:', control.id, 'at index:', sourceIndex);
     
-    // Add visual feedback with null check
-    if (e.currentTarget && e.currentTarget.parentElement instanceof HTMLElement) {
+    // Add visual feedback during drag
+    if (e.currentTarget.parentElement instanceof HTMLElement) {
       setTimeout(() => {
-        if (e.currentTarget.parentElement) {
-          e.currentTarget.parentElement.classList.add('opacity-50');
-        }
+        e.currentTarget.parentElement?.classList.add('opacity-50');
       }, 0);
     }
   };
+  
+  const handleDragEnd = (e: React.DragEvent<HTMLSpanElement>) => {
+    if (e.currentTarget.parentElement instanceof HTMLElement) {
+      e.currentTarget.parentElement.classList.remove('opacity-50');
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>, targetType: string) => {
     if (draggedItem && canDropIn(targetType)) {
       e.preventDefault();
@@ -158,8 +119,9 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
         e.currentTarget.classList.add('drag-over-highlight');
       }
     }
-  };// Improved container content drag handlers that share logic
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  };
+
+  // Improved position tracking for container content
   const handleContainerContentDragOver = (e: React.DragEvent<HTMLDivElement>, controlIndex: number, containerType: string) => {
     if (draggedItem && canDropIn(containerType)) {
       e.preventDefault();
@@ -193,78 +155,14 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       }
     }
   };
-  // Similar handler for accordion sections
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleAccordionContentDragOver = (e: React.DragEvent<HTMLDivElement>, controlIndex: number) => {
-    if (draggedItem && canDropIn('accordion')) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // Determine if we're dragging over the top or bottom half of the control
-      const rect = e.currentTarget.getBoundingClientRect();
-      const y = e.clientY;
-      const relativeY = y - rect.top;
-      const isTopHalf = relativeY < rect.height / 2;
-      
-      // Set the position where the dragged item should be inserted
-      const newPosition = isTopHalf ? controlIndex : controlIndex + 1;
-      
-      if (dragOverPosition !== newPosition) {
-        setDragOverPosition(newPosition);
-        
-        // Remove visual indicators from all controls
-        const highlightedElements = document.querySelectorAll('.border-t-2, .border-b-2');
-        highlightedElements.forEach(el => {
-          if (el instanceof HTMLElement && el !== e.currentTarget) {
-            el.classList.remove('border-t-2', 'border-b-2', 'border-blue-500');
-          }
-        });
-        
-        // Add visual indicator
-        e.currentTarget.classList.remove('border-t-2', 'border-b-2');
-        e.currentTarget.classList.add(isTopHalf ? 'border-t-2' : 'border-b-2', 'border-blue-500');
-      }
-    }
-  };
-  // Similar handler for column layouts
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleColumnContentDragOver = (e: React.DragEvent<HTMLDivElement>, controlIndex: number) => {
-    if (draggedItem && canDropIn('column')) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // Determine if we're dragging over the top or bottom half of the control
-      const rect = e.currentTarget.getBoundingClientRect();
-      const y = e.clientY;
-      const relativeY = y - rect.top;
-      const isTopHalf = relativeY < rect.height / 2;
-      
-      // Set the position where the dragged item should be inserted
-      const newPosition = isTopHalf ? controlIndex : controlIndex + 1;
-      
-      if (dragOverPosition !== newPosition) {
-        setDragOverPosition(newPosition);
-        
-        // Remove visual indicators from all controls
-        const highlightedElements = document.querySelectorAll('.border-t-2, .border-b-2');
-        highlightedElements.forEach(el => {
-          if (el instanceof HTMLElement && el !== e.currentTarget) {
-            el.classList.remove('border-t-2', 'border-b-2', 'border-blue-500');
-          }
-        });
-        
-        // Add visual indicator
-        e.currentTarget.classList.remove('border-t-2', 'border-b-2');
-        e.currentTarget.classList.add(isTopHalf ? 'border-t-2' : 'border-b-2', 'border-blue-500');
-      }
-    }
-  };
+
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     if (e.currentTarget instanceof HTMLElement) {
       e.currentTarget.classList.remove('drag-over-highlight', 'border-t-2', 'border-b-2', 'border-blue-500');
     }
     setDragOverPosition(null);
   };
+  
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetType: string, tabIndex?: number, columnIndex?: number, sectionId?: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -355,9 +253,9 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
         // Select the newly added control
         setTimeout(() => setSelectedControlId(newControlBase.id), 0);
       }
-      // Handle moving an existing control
+      // Enhanced handling for moving existing controls
       else if (draggedItem.id && !draggedItem.isNew) {
-        // Handle via the QuestionnaireContext moveControl function
+        // Handle via the QuestionnaireContext moveControl function with proper position tracking
         if (targetType === 'tab' && control.type === ControlType.Tab) {
           moveControl(
             draggedItem.id,
@@ -367,6 +265,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
             undefined,
             tabIndex || activeTabIndex
           );
+          console.log(`[CanvasControl] Moved control to tab at position ${dragOverPosition}`);
         } 
         else if (targetType === 'accordion' && control.type === ControlType.Accordion && sectionId) {
           moveControl(
@@ -376,6 +275,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
             dragOverPosition !== null ? dragOverPosition : undefined,
             sectionId
           );
+          console.log(`[CanvasControl] Moved control to accordion section at position ${dragOverPosition}`);
         }
         else if (targetType === 'column' && control.type === ControlType.ColumnLayout && typeof columnIndex === 'number') {
           moveControl(
@@ -387,6 +287,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
             undefined,
             columnIndex
           );
+          console.log(`[CanvasControl] Moved control to column at position ${dragOverPosition}`);
         }
       }
       
@@ -396,7 +297,8 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
     }
   };
 
-  const renderTabControl = (tabControl: TabControl) => {    if (!tabControl.tabs || !Array.isArray(tabControl.tabs) || tabControl.tabs.length === 0) {
+  const renderTabControl = (tabControl: TabControl) => {    
+    if (!tabControl.tabs || !Array.isArray(tabControl.tabs) || tabControl.tabs.length === 0) {
       const defaultTab = {
         id: nanoid(),
         label: 'New Tab',
@@ -463,14 +365,34 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                 Drop controls here to add to this tab
               </div>
             ) : (
-              <div className="space-y-3">                {tabControl.tabs[activeTabIndex]?.controls?.map((childControl, index) => (
+              <div className="space-y-3">
+                {tabControl.tabs[activeTabIndex]?.controls?.map((childControl, index) => (
                   <div 
                     key={childControl.id} 
-                    className="relative"
+                    className={`relative ${
+                      dragOverPosition === index 
+                        ? 'border-t-2 border-blue-500' 
+                        : dragOverPosition === index + 1 
+                          ? 'border-b-2 border-blue-500' 
+                          : ''
+                    }`}
                     onDragOver={(e) => handleContainerContentDragOver(e, index, 'tab')}
                     onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, 'tab', activeTabIndex)}
                   >
-                    <CanvasControl control={childControl} />
+                    <div className="flex items-start">
+                      <span 
+                        className="cursor-move mt-4 mr-2 text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-50"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, childControl.id, index)}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <Move size={16} />
+                      </span>
+                      <div className="flex-1">
+                        <CanvasControl control={childControl} />
+                      </div>
+                    </div>
                   </div>
                 ))}
                 {/* Add an empty drop area at the end for appending items easily */}
@@ -489,7 +411,11 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                     setDragOverPosition(null);
                   }}
                   onDrop={(e) => handleDrop(e, 'tab', activeTabIndex)}
-                />
+                >
+                  <div className="h-full flex items-center justify-center">
+                    <span className="text-gray-400 text-sm">Drop here to add to the end</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -497,6 +423,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       </div>
     );
   };
+  
   const renderColumnLayoutControl = (columnControl: ColumnLayoutControl) => {
     if (!columnControl.columnControls || !Array.isArray(columnControl.columnControls)) {
       const defaultColumns = Array(columnControl.columns || 2).fill([]);
@@ -508,26 +435,68 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
 
     return (
       <div className="flex flex-row gap-4">
-        {Array.from({ length: columnControl.columns || 2 }).map((_, index) => (
+        {Array.from({ length: columnControl.columns || 2 }).map((_, columnIdx) => (
           <div 
-            key={index} 
+            key={columnIdx} 
             className="border rounded-md p-4 bg-white"
             style={{ width: columnWidth }}
             onDragOver={(e) => handleDragOver(e, 'column')}
             onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, 'column', undefined, index)}
+            onDrop={(e) => handleDrop(e, 'column', undefined, columnIdx)}
           >
-            <div className="text-sm text-gray-500 mb-2">Column {index + 1}</div>            {columnControl.columnControls[index]?.length > 0 ? (
-              <div className="space-y-2">                {columnControl.columnControls[index].map((childControl, columnItemIndex) => (
+            <div className="text-sm text-gray-500 mb-2">Column {columnIdx + 1}</div>
+            {columnControl.columnControls[columnIdx]?.length > 0 ? (
+              <div className="space-y-2">
+                {columnControl.columnControls[columnIdx].map((childControl, index) => (
                   <div 
                     key={childControl.id} 
-                    className="relative"
-                    onDragOver={(e) => handleContainerContentDragOver(e, columnItemIndex, 'column')}
+                    className={`relative ${
+                      dragOverPosition === index 
+                        ? 'border-t-2 border-blue-500' 
+                        : dragOverPosition === index + 1 
+                          ? 'border-b-2 border-blue-500' 
+                          : ''
+                    }`}
+                    onDragOver={(e) => handleContainerContentDragOver(e, index, 'column')}
                     onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, 'column', undefined, columnIdx)}
                   >
-                    <CanvasControl control={childControl} />
+                    <div className="flex items-start">
+                      <span 
+                        className="cursor-move mt-4 mr-2 text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-50"
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, childControl.id, index)}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <Move size={16} />
+                      </span>
+                      <div className="flex-1">
+                        <CanvasControl control={childControl} />
+                      </div>
+                    </div>
                   </div>
                 ))}
+                {/* Add empty drop area for appending */}
+                <div 
+                  className="border-2 border-dashed border-gray-200 rounded-md h-8 mt-2 bg-gray-50 opacity-75"
+                  onDragOver={(e) => {
+                    if (draggedItem && canDropIn('column')) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.currentTarget.classList.add('border-blue-300', 'bg-blue-50');
+                      setDragOverPosition(columnControl.columnControls[columnIdx].length);
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    e.currentTarget.classList.remove('border-blue-300', 'bg-blue-50');
+                    setDragOverPosition(null);
+                  }}
+                  onDrop={(e) => handleDrop(e, 'column', undefined, columnIdx)}
+                >
+                  <div className="h-full flex items-center justify-center">
+                    <span className="text-gray-400 text-sm">Drop here</span>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="text-gray-400 text-center p-4 border-2 border-dashed rounded-lg">
@@ -539,6 +508,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       </div>
     );
   };
+  
   const renderAccordionControl = (accordionControl: AccordionControl) => {
     if (!accordionControl.sections || !Array.isArray(accordionControl.sections) || accordionControl.sections.length === 0) {
       const defaultSection = {
@@ -646,15 +616,34 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                 onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
               >
                 {section.controls?.length > 0 ? (
-                  <div className="space-y-3">                    {section.controls.map((childControl, childIndex) => (
+                  <div className="space-y-3">
+                    {section.controls.map((childControl, index) => (
                       <div 
                         key={childControl.id} 
-                        className="relative"
-                        onDragOver={(e) => handleContainerContentDragOver(e, childIndex, 'accordion')}
+                        className={`relative ${
+                          dragOverPosition === index 
+                            ? 'border-t-2 border-blue-500' 
+                            : dragOverPosition === index + 1 
+                              ? 'border-b-2 border-blue-500' 
+                              : ''
+                        }`}
+                        onDragOver={(e) => handleContainerContentDragOver(e, index, 'accordion')}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
                       >
-                        <CanvasControl control={childControl} />
+                        <div className="flex items-start">
+                          <span 
+                            className="cursor-move mt-4 mr-2 text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-50"
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, childControl.id, index)}
+                            onDragEnd={handleDragEnd}
+                          >
+                            <Move size={16} />
+                          </span>
+                          <div className="flex-1">
+                            <CanvasControl control={childControl} />
+                          </div>
+                        </div>
                       </div>
                     ))}
                     {/* Add an empty drop area at the end for appending items easily */}
@@ -673,7 +662,11 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                         setDragOverPosition(null);
                       }}
                       onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
-                    />
+                    >
+                      <div className="h-full flex items-center justify-center">
+                        <span className="text-gray-400 text-sm">Drop here</span>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div 
@@ -690,6 +683,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                       e.currentTarget.classList.remove('bg-blue-50', 'border-blue-300');
                       setDragOverPosition(null);
                     }}
+                    onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
                   >
                     Drop controls here to add to this section
                   </div>
@@ -744,16 +738,14 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
         ${draggedItem && canDropIn(control.type === ControlType.Tab ? 'tab' : control.type) ? 'hover:border-blue-500 hover:ring-1 hover:ring-blue-300' : ''}`
       }
       onClick={handleClick}
-    >      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center">          <span 
+    >      
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center">
+          <span 
             className="cursor-move mr-2 text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-50"
             draggable
-            onDragStart={handleDragStart}
-            onDragEnd={(e) => {
-              if (e.currentTarget.parentElement instanceof HTMLElement) {
-                e.currentTarget.parentElement.classList.remove('opacity-50');
-              }
-            }}
+            onDragStart={(e) => handleDragStart(e, control.id)}
+            onDragEnd={handleDragEnd}
           >
             <Move size={16} />
           </span>

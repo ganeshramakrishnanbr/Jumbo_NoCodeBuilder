@@ -14,6 +14,8 @@ interface QuestionnaireContextType {
   moveControl: (draggedControlId: string, targetParentId: string, targetType: string, targetIndex?: number, sectionId?: string, tabIndex?: number, columnIndex?: number) => void;
   saveQuestionnaire: () => Promise<void>;
   loadQuestionnaire: (id: string) => Promise<void>;
+  // New function to directly update all controls
+  updateQuestionnaireControls: (controls: Control[]) => void;
 }
 
 const defaultQuestionnaire: Questionnaire = {
@@ -418,7 +420,6 @@ export const QuestionnaireProvider: React.FC<{ children: ReactNode }> = ({ child
       console.error("Error saving questionnaire:", error);
     }
   };
-
   const loadQuestionnaire = async (id: string) => {
     try {
       console.log("Loading questionnaire", id);
@@ -429,6 +430,20 @@ export const QuestionnaireProvider: React.FC<{ children: ReactNode }> = ({ child
     } catch (error) {
       console.error("Error loading questionnaire:", error);
     }
+  };
+  
+  // Function to directly update all controls in the questionnaire
+  const updateQuestionnaireControls = (controls: Control[]) => {
+    console.log('[DRAG-DEBUG] Direct update of questionnaire controls:', {
+      before: questionnaire.controls.map(c => ({ id: c.id, type: c.type })),
+      after: controls.map(c => ({ id: c.id, type: c.type }))
+    });
+    
+    setQuestionnaire(prev => ({
+      ...prev,
+      controls: controls,
+      updatedAt: new Date()
+    }));
   };
 
   return (
@@ -445,6 +460,7 @@ export const QuestionnaireProvider: React.FC<{ children: ReactNode }> = ({ child
         moveControl,
         saveQuestionnaire,
         loadQuestionnaire,
+        updateQuestionnaireControls,
       }}
     >
       {children}
