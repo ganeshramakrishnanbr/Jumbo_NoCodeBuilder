@@ -467,6 +467,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                   <div 
                     key={childControl.id} 
                     className="relative"
+                    onClick={(e) => { e.stopPropagation(); setSelectedControlId(childControl.id); }}
                     onDragOver={(e) => handleContainerContentDragOver(e, index, 'tab')}
                     onDragLeave={handleDragLeave}
                   >
@@ -522,6 +523,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                   <div 
                     key={childControl.id} 
                     className="relative"
+                    onClick={(e) => { e.stopPropagation(); setSelectedControlId(childControl.id); }}
                     onDragOver={(e) => handleContainerContentDragOver(e, columnItemIndex, 'column')}
                     onDragLeave={handleDragLeave}
                   >
@@ -650,6 +652,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                       <div 
                         key={childControl.id} 
                         className="relative"
+                        onClick={(e) => { e.stopPropagation(); setSelectedControlId(childControl.id); }}
                         onDragOver={(e) => handleContainerContentDragOver(e, childIndex, 'accordion')}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
