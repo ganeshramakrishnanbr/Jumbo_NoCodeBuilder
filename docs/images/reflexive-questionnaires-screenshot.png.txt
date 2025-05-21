@@ -1,0 +1,12 @@
+This is a placeholder file. 
+
+Please save the screenshot you shared with me as 'reflexive-questionnaires-screenshot.png' in this directory:
+c:\Users\raga2\Downloads\WIP-LifeInsurance\Main\reflexive_Gen2Testing\docs\images\
+
+You'll need to:
+1. Right-click the image in our conversation
+2. Select "Save image as..."
+3. Navigate to the directory mentioned above
+4. Save it as "reflexive-questionnaires-screenshot.png"
+
+After saving the image, you can delete this placeholder text file.
