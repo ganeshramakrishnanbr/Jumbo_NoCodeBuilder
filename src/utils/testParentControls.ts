@@ -4,7 +4,7 @@
 
 import { Control, ControlType } from '../types';
 import { moveParentControl } from './dragDropUtils';
-import { logControlStructure, validateControlMovement } from './debugUtils';
+import { validateControlMovement } from './debugUtils';
 
 /**
  * Creates a mock control for testing
@@ -35,7 +35,7 @@ const createMockControls = (count: number, includeParentControls: boolean = true
   
   // Add some regular controls
   for (let i = 0; i < count; i++) {
-    controls.push(createMockControl(ControlType.TextInput, i));
+    controls.push(createMockControl(ControlType.TextBox, i));
   }
   
   // Add parent controls if requested

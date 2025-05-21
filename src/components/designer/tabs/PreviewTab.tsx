@@ -1,15 +1,29 @@
+/**
+ * PreviewTab Component
+ * 
+ * A component that provides a live preview of the questionnaire being designed. It supports
+ * different viewport sizes (mobile, tablet, desktop) and handles various form control types.
+ * 
+ * Features:
+ * - Responsive preview with device-specific layouts
+ * - Interactive form controls (textbox, checkbox, radio, etc.)
+ * - Real-time form value updates
+ * - Support for masked fields
+ * - Accordion and tab-based layouts
+ * 
+ * @example
+ * <PreviewTab />
+ */
 import React, { useState } from 'react';
 import { useQuestionnaire } from '../../../contexts/QuestionnaireContext';
-import { Smartphone, Tablet, Monitor, Eye, EyeOff } from 'lucide-react';
+import { Smartphone, Tablet, Monitor } from 'lucide-react';
 import { Control, ControlType, TabControl, ColumnLayoutControl, AccordionControl } from '../../../types';
 
 const PreviewTab: React.FC = () => {
   const { questionnaire } = useQuestionnaire();
   const [viewportSize, setViewportSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [activeTabIndices, setActiveTabIndices] = useState<Record<string, number>>({});
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const [showMasked, setShowMasked] = useState<Record<string, boolean>>({});
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [formValues, setFormValues] = useState<Record<string, string>>({});  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
   const handleInputChange = (controlId: string, value: any, type?: ControlType) => {
     console.log('[handleInputChange] controlId:', controlId, 'value:', value, 'type:', type);
@@ -52,7 +66,7 @@ const PreviewTab: React.FC = () => {
 
   const renderCheckbox = (control: Control) => {
     const options = control.properties?.options || [];
-    const values = formValues[control.id] || [];
+
 
     return (
       <div className="mb-4">

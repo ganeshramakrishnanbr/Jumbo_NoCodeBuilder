@@ -1,7 +1,31 @@
+/**
+ * Questionnaire Context
+ * 
+ * Provides state management and operations for the questionnaire designer.
+ * This context handles all questionnaire-related operations including:
+ * - Adding, updating, and deleting controls
+ * - Moving controls between different sections and layouts
+ * - Managing the active tab and selected control states
+ * - Saving and loading questionnaires
+ * 
+ * @example
+ * // Wrap your app with the provider:
+ * <QuestionnaireProvider>
+ *   <App />
+ * </QuestionnaireProvider>
+ * 
+ * // Use the context in components:
+ * const { questionnaire, addControl } = useQuestionnaire();
+ */
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Control, Questionnaire, ControlType, AccordionControl, AccordionSection, ColumnLayoutControl, TabControl } from '../types'; 
 import { nanoid } from 'nanoid';
 
+/**
+ * Interface defining the shape of the Questionnaire context
+ * Includes all operations and state that can be accessed by components
+ */
 interface QuestionnaireContextType {
   questionnaire: Questionnaire;
   activeTabIndex: number;

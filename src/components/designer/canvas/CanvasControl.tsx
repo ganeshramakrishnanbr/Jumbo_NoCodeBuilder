@@ -119,35 +119,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       }, 0);
     }
   };
-  // Child control drag handler with source tracking
-  const handleChildDragStart = (e: React.DragEvent<HTMLSpanElement>, childId: string, sourceIndex: number) => {
-    e.stopPropagation();
-    
-    // Set data transfer for compatibility
-    e.dataTransfer.setData('text/plain', childId);
-    e.dataTransfer.effectAllowed = 'move';
-    
-    // Start drag operation with source tracking
-    startDrag({
-      id: childId,
-      type: 'control',
-      controlType: control.type,
-      isNew: false,
-      sourceId: control.id,
-      sourceIndex: sourceIndex
-    });
-    
-    console.log('[CanvasControl] Started dragging child control:', childId, 'from container:', control.id, 'at index:', sourceIndex);
-    
-    // Add visual feedback with null check
-    if (e.currentTarget && e.currentTarget.parentElement instanceof HTMLElement) {
-      setTimeout(() => {
-        if (e.currentTarget.parentElement) {
-          e.currentTarget.parentElement.classList.add('opacity-50');
-        }
-      }, 0);
-    }
-  };
+  // (Removed unused handleChildDragStart function)
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>, targetType: string) => {
     if (draggedItem && canDropIn(targetType)) {
       e.preventDefault();
@@ -193,72 +165,8 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       }
     }
   };
-  // Similar handler for accordion sections
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleAccordionContentDragOver = (e: React.DragEvent<HTMLDivElement>, controlIndex: number) => {
-    if (draggedItem && canDropIn('accordion')) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // Determine if we're dragging over the top or bottom half of the control
-      const rect = e.currentTarget.getBoundingClientRect();
-      const y = e.clientY;
-      const relativeY = y - rect.top;
-      const isTopHalf = relativeY < rect.height / 2;
-      
-      // Set the position where the dragged item should be inserted
-      const newPosition = isTopHalf ? controlIndex : controlIndex + 1;
-      
-      if (dragOverPosition !== newPosition) {
-        setDragOverPosition(newPosition);
-        
-        // Remove visual indicators from all controls
-        const highlightedElements = document.querySelectorAll('.border-t-2, .border-b-2');
-        highlightedElements.forEach(el => {
-          if (el instanceof HTMLElement && el !== e.currentTarget) {
-            el.classList.remove('border-t-2', 'border-b-2', 'border-blue-500');
-          }
-        });
-        
-        // Add visual indicator
-        e.currentTarget.classList.remove('border-t-2', 'border-b-2');
-        e.currentTarget.classList.add(isTopHalf ? 'border-t-2' : 'border-b-2', 'border-blue-500');
-      }
-    }
-  };
-  // Similar handler for column layouts
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleColumnContentDragOver = (e: React.DragEvent<HTMLDivElement>, controlIndex: number) => {
-    if (draggedItem && canDropIn('column')) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // Determine if we're dragging over the top or bottom half of the control
-      const rect = e.currentTarget.getBoundingClientRect();
-      const y = e.clientY;
-      const relativeY = y - rect.top;
-      const isTopHalf = relativeY < rect.height / 2;
-      
-      // Set the position where the dragged item should be inserted
-      const newPosition = isTopHalf ? controlIndex : controlIndex + 1;
-      
-      if (dragOverPosition !== newPosition) {
-        setDragOverPosition(newPosition);
-        
-        // Remove visual indicators from all controls
-        const highlightedElements = document.querySelectorAll('.border-t-2, .border-b-2');
-        highlightedElements.forEach(el => {
-          if (el instanceof HTMLElement && el !== e.currentTarget) {
-            el.classList.remove('border-t-2', 'border-b-2', 'border-blue-500');
-          }
-        });
-        
-        // Add visual indicator
-        e.currentTarget.classList.remove('border-t-2', 'border-b-2');
-        e.currentTarget.classList.add(isTopHalf ? 'border-t-2' : 'border-b-2', 'border-blue-500');
-      }
-    }
-  };
+  // (Removed unused handleAccordionContentDragOver function)
+  // (Removed unused handleColumnContentDragOver function)
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     if (e.currentTarget instanceof HTMLElement) {
       e.currentTarget.classList.remove('drag-over-highlight', 'border-t-2', 'border-b-2', 'border-blue-500');

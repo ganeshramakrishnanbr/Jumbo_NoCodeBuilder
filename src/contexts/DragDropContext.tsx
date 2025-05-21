@@ -1,6 +1,29 @@
-import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';
-import { Control, ControlType } from '../types';
+/**
+ * Drag and Drop Context
+ * 
+ * Manages the drag and drop functionality for the questionnaire designer.
+ * Provides state and operations for:
+ * - Tracking dragged items
+ * - Managing drag sources and targets
+ * - Validating drop operations
+ * - Maintaining drag state
+ * 
+ * @example
+ * // Wrap your component with the provider:
+ * <DragDropProvider>
+ *   <DesignerComponent />
+ * </DragDropProvider>
+ * 
+ * // Use in components:
+ * const { startDrag, endDrag, isDragging } = useDragDrop();
+ */
 
+import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';
+import { ControlType } from '../types';
+
+/**
+ * Represents an item being dragged in the designer
+ */
 interface DragItem {
   id: string;
   type: string;
@@ -10,6 +33,9 @@ interface DragItem {
   sourceIndex?: number;
 }
 
+/**
+ * Context interface providing drag and drop operations
+ */
 interface DragDropContextType {
   draggedItem: DragItem | null;
   setDraggedItem: (item: DragItem | null) => void;

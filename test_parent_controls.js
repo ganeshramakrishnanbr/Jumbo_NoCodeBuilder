@@ -1,4 +1,3 @@
-# filepath: c:\Users\raga2\Downloads\WIP-LifeInsurance\Main\reflexive_Gen2Testing\test_parent_controls.js
 // Script to run parent control tests
 
 console.log('======================================');

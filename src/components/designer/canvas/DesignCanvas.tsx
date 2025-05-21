@@ -4,7 +4,7 @@ import { useDragDrop } from '../../../contexts/DragDropContext';
 import { Control, ControlType } from '../../../types';
 import CanvasControl from './CanvasControl';
 import { nanoid } from 'nanoid';
-import { forceUIRefresh, findControlIndex, moveFirstControl, moveParentControl, logQuestionnaireState } from '../../../utils/dragDropUtils';
+import { forceUIRefresh, moveFirstControl, moveParentControl, logQuestionnaireState } from '../../../utils/dragDropUtils';
 
 const DesignCanvas: React.FC = () => {
   const { questionnaire, addControl, moveControl, updateQuestionnaireControls } = useQuestionnaire();
@@ -61,7 +61,6 @@ const DesignCanvas: React.FC = () => {
         if (canvasRect) {          const mouseY = e.clientY;
           
           // Find the closest control to the mouse position
-          let closestIndex = 0;
           let minDistance = Number.MAX_VALUE;
           
           const controlElements = Array.from(
@@ -84,7 +83,6 @@ const DesignCanvas: React.FC = () => {
             
             if (distance < minDistance) {
               minDistance = distance;
-              closestIndex = index;
               
               // Determine if we should place before or after this control
               const position = determineDragPosition(e, rect);
