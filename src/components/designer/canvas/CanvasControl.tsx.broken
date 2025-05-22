@@ -1,23 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuestionnaire } from '../../../contexts/QuestionnaireContext';
 import { useDragDrop } from '../../../contexts/DragDropContext';
 import { Control, ControlType, TabControl, ColumnLayoutControl, AccordionControl } from '../../../types';
-import { Trash2, Settings, Move, Star } from 'lucide-react';
+import { Trash2, Move, Star } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import './AccordionStyles.css';
-import './AccordionFixes.css'; // Import the fixes for accordion rendering
 
 interface CanvasControlProps {
   control: Control;
 }
 
 const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
-  const { updateControl, deleteControl, selectedControlId, setSelectedControlId, moveControl } = useQuestionnaire();
+  const { updateControl, deleteControl, selectedControlId, setSelectedControlId, moveControl, questionnaire } = useQuestionnaire();
   const { draggedItem, canDropIn, endDrag, startDrag } = useDragDrop();
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [dragOverPosition, setDragOverPosition] = useState<number | null>(null);
   // Track expanded sections for accordions in design mode
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
   // Initialize expanded sections based on control's configuration
   useEffect(() => {
     if (control.type === ControlType.Accordion) {
@@ -29,25 +29,8 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
         });
         setExpandedSections(sectionState);
       } else if (accordionControl.sections && accordionControl.sections.length > 0) {
-        // Check if it's in horizontal layout
-        const isHorizontal = accordionControl.layout === 'horizontal';
-        
-        if (isHorizontal) {
-          // In horizontal layout mode, expand all sections by default
-          const allExpandedState: Record<string, boolean> = {};
-          accordionControl.sections.forEach(section => {
-            allExpandedState[section.id] = true;
-          });
-          setExpandedSections(allExpandedState);
-          
-          // Save this expanded state
-          updateControl(accordionControl.id, {
-            expandedSections: accordionControl.sections.map(section => section.id)
-          } as Partial<AccordionControl>);
-        } else {
-          // In vertical layout, just expand the first section (default behavior)
-          setExpandedSections({ [accordionControl.sections[0].id]: true });
-        }
+        // By default, expand the first section
+        setExpandedSections({ [accordionControl.sections[0].id]: true });
       }
     }
   }, [control.id]);
@@ -79,9 +62,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       
       return newState;
     });
-  };  
-  
-  const handleClick = (e: React.MouseEvent) => {
+  };  const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedControlId(control.id);
   };
@@ -91,42 +72,55 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
     if (confirm(`Are you sure you want to delete this ${control.type}?`)) {
       deleteControl(control.id);
     }
-  };
-  
-  // Enhanced drag start handler for child controls
-  const handleDragStart = (e: React.DragEvent<HTMLSpanElement>, controlId: string, sourceIndex?: number) => {
+  };  // Enhanced drag handlers for controls
+  const handleDragStart = (e: React.DragEvent<HTMLSpanElement>) => {
     e.stopPropagation();
     
     // Set data transfer for compatibility
-    e.dataTransfer.setData('text/plain', controlId);
+    e.dataTransfer.setData('text/plain', control.id);
     e.dataTransfer.effectAllowed = 'move';
+    
+    // Get the control's index from the current questionnaire available from the context
+    const sourceIndex = questionnaire.controls.findIndex((c: Control) => c.id === control.id);
+    
+    // Check if this is a parent control type
+    const isParentControl = [ControlType.Tab, ControlType.Accordion, ControlType.ColumnLayout].includes(control.type);
+    
+    console.log('[DRAG-DEBUG] Starting drag in CanvasControl:', {
+      controlId: control.id, 
+      controlType: control.type,
+      sourceIndex: sourceIndex,
+      isFirstControl: sourceIndex === 0,
+      isParentControl: isParentControl
+    });
     
     // Start drag operation with better source tracking
     startDrag({
-      id: controlId,
+      id: control.id,
       type: 'control',
       controlType: control.type,
       isNew: false,
       sourceId: control.id,
-      sourceIndex: sourceIndex
+      sourceIndex: sourceIndex 
     });
     
-    console.log('[CanvasControl] Started dragging control:', controlId, 'from container:', control.id, 'at index:', sourceIndex);
+    console.log('[CanvasControl] Started dragging control:', control.id, 'from container:', control.id, 'at index:', sourceIndex);
     
-    // Add visual feedback during drag
-    if (e.currentTarget.parentElement instanceof HTMLElement) {
+    // Add visual feedback during drag - with null check for e.currentTarget
+    if (e.currentTarget && e.currentTarget.parentElement instanceof HTMLElement) {
       setTimeout(() => {
-        e.currentTarget.parentElement?.classList.add('opacity-50');
+        if (e.currentTarget.parentElement) {
+          e.currentTarget.parentElement.classList.add('opacity-50');
+          
+          // Add special class for parent controls to enhance visual feedback
+          if (isParentControl) {
+            e.currentTarget.parentElement.classList.add('parent-control-dragging');
+          }
+        }
       }, 0);
     }
   };
-  
-  const handleDragEnd = (e: React.DragEvent<HTMLSpanElement>) => {
-    if (e.currentTarget.parentElement instanceof HTMLElement) {
-      e.currentTarget.parentElement.classList.remove('opacity-50');
-    }
-  };
-
+  // (Removed unused handleChildDragStart function)
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>, targetType: string) => {
     if (draggedItem && canDropIn(targetType)) {
       e.preventDefault();
@@ -137,13 +131,14 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
         e.currentTarget.classList.add('drag-over-highlight');
       }
     }
-  };
-
-  // Improved position tracking for container content
-  const handleContainerContentDragOver = (e: React.DragEvent<HTMLDivElement>, controlIndex: number, containerType: string) => {
+  };// Improved container content drag handlers that share logic
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars  const handleContainerContentDragOver = (e: React.DragEvent<HTMLDivElement>, controlIndex: number, containerType: string) => {
     if (draggedItem && canDropIn(containerType)) {
       e.preventDefault();
       e.stopPropagation();
+      
+      // Check if we're in a horizontal layout container
+      const isHorizontalContainer = e.currentTarget.closest('[data-layout="horizontal"]') !== null;
       
       // Determine if we're dragging over the top or bottom half of the control
       const rect = e.currentTarget.getBoundingClientRect();
@@ -158,29 +153,34 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
         setDragOverPosition(newPosition);
         
         // Remove visual indicators from all controls
-        const highlightedElements = document.querySelectorAll('.border-t-2, .border-b-2');
+        const highlightedElements = document.querySelectorAll('.border-t-2, .border-b-2, .border-blue-500');
         highlightedElements.forEach(el => {
           if (el instanceof HTMLElement && el !== e.currentTarget) {
             el.classList.remove('border-t-2', 'border-b-2', 'border-blue-500');
           }
         });
         
-        // Add visual indicator
+        // Add visual indicator - if horizontal, make it more visible
         e.currentTarget.classList.remove('border-t-2', 'border-b-2');
         e.currentTarget.classList.add(isTopHalf ? 'border-t-2' : 'border-b-2', 'border-blue-500');
         
-        console.log(`[CanvasControl] Container drag over: ${containerType}, position: ${newPosition}`);
+        // Add extra highlighting for horizontal layout for better visibility
+        if (isHorizontalContainer) {
+          e.currentTarget.classList.add('drag-over-highlight');
+        }
+        
+        console.log(`[CanvasControl] Container drag over: ${containerType}, position: ${newPosition}, horizontal: ${isHorizontalContainer}`);
       }
     }
   };
-
+  // (Removed unused handleAccordionContentDragOver function)
+  // (Removed unused handleColumnContentDragOver function)
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     if (e.currentTarget instanceof HTMLElement) {
       e.currentTarget.classList.remove('drag-over-highlight', 'border-t-2', 'border-b-2', 'border-blue-500');
     }
     setDragOverPosition(null);
   };
-  
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetType: string, tabIndex?: number, columnIndex?: number, sectionId?: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -271,9 +271,9 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
         // Select the newly added control
         setTimeout(() => setSelectedControlId(newControlBase.id), 0);
       }
-      // Enhanced handling for moving existing controls
+      // Handle moving an existing control
       else if (draggedItem.id && !draggedItem.isNew) {
-        // Handle via the QuestionnaireContext moveControl function with proper position tracking
+        // Handle via the QuestionnaireContext moveControl function
         if (targetType === 'tab' && control.type === ControlType.Tab) {
           moveControl(
             draggedItem.id,
@@ -283,7 +283,6 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
             undefined,
             tabIndex || activeTabIndex
           );
-          console.log(`[CanvasControl] Moved control to tab at position ${dragOverPosition}`);
         } 
         else if (targetType === 'accordion' && control.type === ControlType.Accordion && sectionId) {
           moveControl(
@@ -293,7 +292,6 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
             dragOverPosition !== null ? dragOverPosition : undefined,
             sectionId
           );
-          console.log(`[CanvasControl] Moved control to accordion section at position ${dragOverPosition}`);
         }
         else if (targetType === 'column' && control.type === ControlType.ColumnLayout && typeof columnIndex === 'number') {
           moveControl(
@@ -305,7 +303,6 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
             undefined,
             columnIndex
           );
-          console.log(`[CanvasControl] Moved control to column at position ${dragOverPosition}`);
         }
       }
       
@@ -315,8 +312,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
     }
   };
 
-  const renderTabControl = (tabControl: TabControl) => {    
-    if (!tabControl.tabs || !Array.isArray(tabControl.tabs) || tabControl.tabs.length === 0) {
+  const renderTabControl = (tabControl: TabControl) => {    if (!tabControl.tabs || !Array.isArray(tabControl.tabs) || tabControl.tabs.length === 0) {
       const defaultTab = {
         id: nanoid(),
         label: 'New Tab',
@@ -383,34 +379,15 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                 Drop controls here to add to this tab
               </div>
             ) : (
-              <div className="space-y-3">
-                {tabControl.tabs[activeTabIndex]?.controls?.map((childControl, index) => (
+              <div className="space-y-3">                {tabControl.tabs[activeTabIndex]?.controls?.map((childControl, index) => (
                   <div 
                     key={childControl.id} 
-                    className={`relative ${
-                      dragOverPosition === index 
-                        ? 'border-t-2 border-blue-500' 
-                        : dragOverPosition === index + 1 
-                          ? 'border-b-2 border-blue-500' 
-                          : ''
-                    }`}
+                    className="relative"
+                    onClick={(e) => { e.stopPropagation(); setSelectedControlId(childControl.id); }}
                     onDragOver={(e) => handleContainerContentDragOver(e, index, 'tab')}
                     onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, 'tab', activeTabIndex)}
                   >
-                    <div className="flex items-start">
-                      <span 
-                        className="cursor-move mt-4 mr-2 text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-50"
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, childControl.id, index)}
-                        onDragEnd={handleDragEnd}
-                      >
-                        <Move size={16} />
-                      </span>
-                      <div className="flex-1">
-                        <CanvasControl control={childControl} />
-                      </div>
-                    </div>
+                    <CanvasControl control={childControl} />
                   </div>
                 ))}
                 {/* Add an empty drop area at the end for appending items easily */}
@@ -429,11 +406,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                     setDragOverPosition(null);
                   }}
                   onDrop={(e) => handleDrop(e, 'tab', activeTabIndex)}
-                >
-                  <div className="h-full flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">Drop here to add to the end</span>
-                  </div>
-                </div>
+                />
               </div>
             )}
           </div>
@@ -441,7 +414,6 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       </div>
     );
   };
-  
   const renderColumnLayoutControl = (columnControl: ColumnLayoutControl) => {
     if (!columnControl.columnControls || !Array.isArray(columnControl.columnControls)) {
       const defaultColumns = Array(columnControl.columns || 2).fill([]);
@@ -453,68 +425,27 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
 
     return (
       <div className="flex flex-row gap-4">
-        {Array.from({ length: columnControl.columns || 2 }).map((_, columnIdx) => (
+        {Array.from({ length: columnControl.columns || 2 }).map((_, index) => (
           <div 
-            key={columnIdx} 
+            key={index} 
             className="border rounded-md p-4 bg-white"
             style={{ width: columnWidth }}
             onDragOver={(e) => handleDragOver(e, 'column')}
             onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, 'column', undefined, columnIdx)}
+            onDrop={(e) => handleDrop(e, 'column', undefined, index)}
           >
-            <div className="text-sm text-gray-500 mb-2">Column {columnIdx + 1}</div>
-            {columnControl.columnControls[columnIdx]?.length > 0 ? (
-              <div className="space-y-2">
-                {columnControl.columnControls[columnIdx].map((childControl, index) => (
+            <div className="text-sm text-gray-500 mb-2">Column {index + 1}</div>            {columnControl.columnControls[index]?.length > 0 ? (
+              <div className="space-y-2">                {columnControl.columnControls[index].map((childControl, columnItemIndex) => (
                   <div 
                     key={childControl.id} 
-                    className={`relative ${
-                      dragOverPosition === index 
-                        ? 'border-t-2 border-blue-500' 
-                        : dragOverPosition === index + 1 
-                          ? 'border-b-2 border-blue-500' 
-                          : ''
-                    }`}
-                    onDragOver={(e) => handleContainerContentDragOver(e, index, 'column')}
+                    className="relative"
+                    onClick={(e) => { e.stopPropagation(); setSelectedControlId(childControl.id); }}
+                    onDragOver={(e) => handleContainerContentDragOver(e, columnItemIndex, 'column')}
                     onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, 'column', undefined, columnIdx)}
                   >
-                    <div className="flex items-start">
-                      <span 
-                        className="cursor-move mt-4 mr-2 text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-50"
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, childControl.id, index)}
-                        onDragEnd={handleDragEnd}
-                      >
-                        <Move size={16} />
-                      </span>
-                      <div className="flex-1">
-                        <CanvasControl control={childControl} />
-                      </div>
-                    </div>
+                    <CanvasControl control={childControl} />
                   </div>
                 ))}
-                {/* Add empty drop area for appending */}
-                <div 
-                  className="border-2 border-dashed border-gray-200 rounded-md h-8 mt-2 bg-gray-50 opacity-75"
-                  onDragOver={(e) => {
-                    if (draggedItem && canDropIn('column')) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      e.currentTarget.classList.add('border-blue-300', 'bg-blue-50');
-                      setDragOverPosition(columnControl.columnControls[columnIdx].length);
-                    }
-                  }}
-                  onDragLeave={(e) => {
-                    e.currentTarget.classList.remove('border-blue-300', 'bg-blue-50');
-                    setDragOverPosition(null);
-                  }}
-                  onDrop={(e) => handleDrop(e, 'column', undefined, columnIdx)}
-                >
-                  <div className="h-full flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">Drop here</span>
-                  </div>
-                </div>
               </div>
             ) : (
               <div className="text-gray-400 text-center p-4 border-2 border-dashed rounded-lg">
@@ -526,7 +457,6 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       </div>
     );
   };
-  
   const renderAccordionControl = (accordionControl: AccordionControl) => {
     if (!accordionControl.sections || !Array.isArray(accordionControl.sections) || accordionControl.sections.length === 0) {
       const defaultSection = {
@@ -564,37 +494,43 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
     const getContainerClasses = () => {
       if (isHorizontal) {
         // Enhanced horizontal container with better drag and drop support
-        return "flex flex-row gap-6 overflow-x-auto pb-4 relative min-h-[320px] w-full accordion-horizontal-container";
+        return "flex flex-row gap-4 overflow-x-auto pb-2 relative min-h-[150px] w-full";
       } else {
         return "space-y-4";
       }
     };
-      // Return the section classes based on layout
+    
+    // Return the section classes based on layout
     const getSectionClasses = () => {
-      const baseClasses = "border rounded-lg overflow-hidden bg-white";
       if (isHorizontal) {
-        return `${baseClasses} flex-shrink-0`;
+        return "border rounded-lg overflow-hidden bg-white flex-shrink-0";
       } else {
-        return baseClasses;
+        return "border rounded-lg overflow-hidden bg-white";
       }
-    };    // Set min-height if specified
+    };    // Set min-height if specified and handle horizontal layout better
     const getSectionStyles = () => {
       const styles: React.CSSProperties = {};
       
       if (isHorizontal) {
-        // In horizontal mode, use fixed width for better layout control
-        styles.minWidth = '350px'; 
-        styles.width = '350px';     // Fixed width ensures consistency
-        styles.flexShrink = 0;
-        styles.flexGrow = 0;
-        
-        // Ensure sections have a minimum height in horizontal layout
-        const minHeight = sectionConfig.minHeight || '300px'; // Increase minimum height
-        styles.minHeight = minHeight;
-        styles.maxHeight = '600px'; // Set maximum height to prevent excessive stretching
-      } else if (sectionConfig.minHeight) {
-        // For vertical layout, only set min-height if specified in config
+        // In horizontal mode, set the width based on number of sections
+        const width = `${Math.max(300, 100 / Math.min(accordionControl.sections.length, 3))}px`;
+        styles.minWidth = width;
+        styles.width = width;
+        // Make sure horizontal sections have proper positioning for drag and drop
+        styles.position = 'relative'; 
+        styles.display = 'flex';
+        styles.flexDirection = 'column';
+        // Improve z-index to ensure proper event handling
+        styles.zIndex = 1;
+        // Set flex properties to ensure proper layout
+        styles.flex = '1 0 auto';
+      }
+      
+      if (sectionConfig.minHeight) {
         styles.minHeight = sectionConfig.minHeight;
+      } else {
+        // Ensure a reasonable minimum height for drag and drop area
+        styles.minHeight = isHorizontal ? '200px' : '100px';
       }
       
       return styles;
@@ -607,22 +543,23 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
         case 'large': return 'p-6';
         default: return 'p-4'; // medium padding (default)
       }
-    };
-
-    return (      <div 
-        className={getContainerClasses()}
+    };    return (
+      <div 
+        className={getContainerClasses()} 
         data-accordion-layout={isHorizontal ? 'horizontal' : 'vertical'}
       >
-        {accordionControl.sections.map((section) => (
-          <div 
+        {accordionControl.sections.map((section) => (            <div 
             key={section.id} 
             className={getSectionClasses()}
             style={getSectionStyles()}
-            data-layout={isHorizontal ? 'horizontal' : 'vertical'}
             data-section-id={section.id}
-          >
-            <div className={getHeaderClasses()} onClick={() => toggleSection(accordionControl, section.id)}>
-              <h3 className="text-sm font-medium text-gray-900">{section.label}</h3>
+            data-layout={isHorizontal ? 'horizontal' : 'vertical'}
+            data-droppable="accordion-section"
+          >            <div className={getHeaderClasses()} onClick={() => toggleSection(accordionControl, section.id)}>
+              <h3 className="text-sm font-medium text-gray-900">
+                {section.label}
+                {/* Only show the required indicator at the control level, not section level */}
+              </h3>
               
               {isDesignMode && (
                 <div className="flex items-center space-x-1">
@@ -631,54 +568,77 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                   </span>
                 </div>
               )}
-            </div>            {/* Always render section content in horizontal layout, but use conditional visibility in vertical */}
-            {(isHorizontal || expandedSections[section.id]) && (
-              <div 
-                className={`accordion-section-content ${getContentPaddingClass()}`}
+            </div>            {expandedSections[section.id] && (                <div 
+                className={`${getContentPaddingClass()} ${isHorizontal ? 'flex-grow accordion-section-content' : ''}`}
+                onDragOver={(e) => {
+                  // Explicitly prevent default to ensure drop is allowed
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (draggedItem && canDropIn('accordion')) {
+                    e.currentTarget.classList.add('drag-over-highlight');
+                    
+                    // For horizontal layout, we need to ensure the section is highlighted clearly
+                    if (isHorizontal) {
+                      const sectionElement = e.currentTarget.closest('[data-section-id]');
+                      if (sectionElement instanceof HTMLElement) {
+                        sectionElement.classList.add('active-drop-target');
+                      }
+                    }
+                    
+                    console.log('[DRAG-DEBUG] Accordion section content drag over triggered:', section.id);
+                  }
+                }}
+                onDragLeave={(e) => {
+                  handleDragLeave(e);
+                  // Remove the active drop target highlight from the section
+                  if (isHorizontal) {
+                    const sectionElement = e.currentTarget.closest('[data-section-id]');
+                    if (sectionElement instanceof HTMLElement) {
+                      sectionElement.classList.remove('active-drop-target');
+                    }
+                  }
+                }}
+                onDrop={(e) => {
+                  // Explicitly handle the drop regardless of layout
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('[DRAG-DEBUG] Accordion section content drop triggered:', section.id);
+                  handleDrop(e, 'accordion', undefined, undefined, section.id);
+                  
+                  // Remove any remaining highlight classes
+                  if (isHorizontal) {
+                    const sectionElement = e.currentTarget.closest('[data-section-id]');
+                    if (sectionElement instanceof HTMLElement) {
+                      sectionElement.classList.remove('active-drop-target');
+                    }
+                  }
+                }}
+                style={{
+                  position: 'relative',
+                  zIndex: 10,
+                  minHeight: isHorizontal ? '150px' : '50px',
+                  flex: isHorizontal ? '1 1 auto' : 'initial',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  width: isHorizontal ? '100%' : 'auto',
+                  overflow: isHorizontal ? 'visible' : 'auto'
+                }}
                 data-droppable="true"
-                data-section-expanded={expandedSections[section.id] ? "true" : "false"}
-                data-section-id={section.id}
-                onDragOver={(e) => handleDragOver(e, 'accordion')}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
-              >                {section.controls?.length > 0 ? (
-                  <>
-                    <div className={`section-controls-container ${isHorizontal ? 'horizontal-controls' : 'space-y-3'}`}>
-                      {section.controls.map((childControl, index) => (
-                        <div 
-                          key={childControl.id} 
-                          className={`relative section-control-item ${
-                            dragOverPosition === index 
-                              ? 'border-t-2 border-blue-500' 
-                              : dragOverPosition === index + 1 
-                                ? 'border-b-2 border-blue-500' 
-                                : ''
-                          }`}
-                          onDragOver={(e) => handleContainerContentDragOver(e, index, 'accordion')}
-                          onDragLeave={handleDragLeave}
-                          onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
-                        >
-                          <div className="flex items-start w-full">
-                            <span 
-                              className="cursor-move mt-4 mr-2 text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-50 flex-shrink-0"
-                              draggable
-                              onDragStart={(e) => handleDragStart(e, childControl.id, index)}
-                              onDragEnd={handleDragEnd}
-                            >
-                              <Move size={16} />
-                            </span>                          <div className="flex-1 min-w-0 w-full overflow-visible">
-                              <div className="canvas-control-wrapper w-full overflow-visible">
-                                <CanvasControl control={childControl} />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>                    {/* Add an empty drop area at the end for appending items easily */}                    <div 
-                      className={`border-2 border-dashed border-gray-200 rounded-md mt-auto bg-gray-50 drop-area ${isHorizontal ? 'h-16' : 'h-12'}`}
-                      data-droppable="true"
-                      data-section-id={section.id}
-                      data-drop-area="section-footer"
+              >
+                {section.controls?.length > 0 ? (                  <div className={isHorizontal ? "space-y-3 w-full" : "space-y-3"}>                    {section.controls.map((childControl, childIndex) => (
+                      <div 
+                        key={childControl.id} 
+                        className="relative"
+                        onClick={(e) => { e.stopPropagation(); setSelectedControlId(childControl.id); }}
+                        onDragOver={(e) => handleContainerContentDragOver(e, childIndex, 'accordion')}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
+                        style={{ width: '100%' }}
+                      >
+                        <CanvasControl control={childControl} />
+                      </div>
+                    ))}{/* Add an empty drop area at the end for appending items easily */}                    <div 
+                      className={`border-2 border-dashed border-gray-200 rounded-md h-8 mt-2 bg-gray-50 opacity-75 ${isHorizontal ? 'w-full' : ''}`}
                       onDragOver={(e) => {
                         if (draggedItem && canDropIn('accordion')) {
                           e.preventDefault();
@@ -691,48 +651,44 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
                         e.currentTarget.classList.remove('border-blue-300', 'bg-blue-50');
                         setDragOverPosition(null);
                       }}
-                      onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
-                    >
-                      <div className="h-full flex items-center justify-center w-full">
-                        <div className="flex flex-col items-center">
-                          <span className={`${isHorizontal ? 'text-blue-500 font-medium mb-1' : 'text-gray-400'} text-sm`}>
-                            {isHorizontal ? `${section.label}` : ''}
-                          </span>
-                          <span className="text-gray-400 text-sm font-medium">Drop here</span>
-                        </div>
-                      </div>
-                    </div>
-                  </>                ) : (                  <div 
-                    className={`text-gray-400 text-center p-6 border-2 border-dashed rounded-lg flex-1 flex items-center justify-center empty-section-drop ${isHorizontal ? 'min-h-[140px]' : ''}`}
-                    data-droppable="true"
-                    data-section-id={section.id}
-                    data-empty-section="true"
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDrop(e, 'accordion', undefined, undefined, section.id);
+                        e.currentTarget.classList.remove('border-blue-300', 'bg-blue-50');
+                      }}
+                    />
+                  </div>                ) : (                  <div 
+                    className={`text-gray-400 text-center p-6 border-2 border-dashed rounded-lg ${isHorizontal ? 'flex-grow w-full' : ''}`}
+                    style={{
+                      flex: isHorizontal ? '1 1 auto' : 'initial',
+                      minHeight: isHorizontal ? '150px' : 'auto',
+                      // Make sure pointer events work
+                      pointerEvents: 'auto',
+                      width: isHorizontal ? '100%' : 'auto'
+                    }}
                     onDragOver={(e) => {
                       if (draggedItem && canDropIn('accordion')) {
                         e.preventDefault();
                         e.stopPropagation();
                         e.currentTarget.classList.add('bg-blue-50', 'border-blue-300');
                         setDragOverPosition(0);
+                        console.log('[DRAG-DEBUG] Empty section drag over:', section.id);
                       }
                     }}
                     onDragLeave={(e) => {
                       e.currentTarget.classList.remove('bg-blue-50', 'border-blue-300');
                       setDragOverPosition(null);
                     }}
-                    onDrop={(e) => handleDrop(e, 'accordion', undefined, undefined, section.id)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('[DRAG-DEBUG] Empty section drop:', section.id);
+                      handleDrop(e, 'accordion', undefined, undefined, section.id);
+                      e.currentTarget.classList.remove('bg-blue-50', 'border-blue-300');
+                    }}
                   >
-                    <div className="w-full">
-                      <div className="mb-2">
-                        {isHorizontal ? (
-                          <div className="flex flex-col items-center">
-                            <span className="text-blue-500 font-medium mb-2 text-base">{section.label}</span>
-                            <span className="font-medium">Drag controls here</span>
-                          </div>
-                        ) : (
-                          <span>Drop controls here</span>
-                        )}
-                      </div>
-                    </div>
+                    Drop controls here to add to this section
                   </div>
                 )}
               </div>
@@ -785,18 +741,23 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
         ${draggedItem && canDropIn(control.type === ControlType.Tab ? 'tab' : control.type) ? 'hover:border-blue-500 hover:ring-1 hover:ring-blue-300' : ''}`
       }
       onClick={handleClick}
-    >      
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center">
-          <span 
+    >      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center">          <span 
             className="cursor-move mr-2 text-gray-400 hover:text-gray-600 p-1 rounded-md hover:bg-gray-50"
             draggable
-            onDragStart={(e) => handleDragStart(e, control.id)}
-            onDragEnd={handleDragEnd}
+            onDragStart={handleDragStart}
+            onDragEnd={(e) => {
+              if (e.currentTarget.parentElement instanceof HTMLElement) {
+                e.currentTarget.parentElement.classList.remove('opacity-50');
+              }
+            }}
           >
             <Move size={16} />
-          </span>
-          <h3 className="font-medium text-gray-900">{control.label || control.type}</h3>
+          </span>          <h3 className="font-medium text-gray-900">
+            {control.label || control.type}
+            {/* Added required indicator for the entire control */}
+            {control.required && <span className="text-red-500 ml-1">*</span>}
+          </h3>
         </div>
         
         <div className="flex space-x-2">
@@ -826,8 +787,7 @@ const CanvasControl: React.FC<CanvasControlProps> = ({ control }) => {
       {control.type === ControlType.ColumnLayout && renderColumnLayoutControl(control as ColumnLayoutControl)}
       {control.type === ControlType.Address && renderAddressControl()}
       {control.type === ControlType.Accordion && renderAccordionControl(control as AccordionControl)}
-    </div>
-  );
+    </div>  );
 };
 
 export default CanvasControl;
