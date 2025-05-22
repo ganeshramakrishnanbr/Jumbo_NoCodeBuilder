@@ -1,0 +1,46 @@
+/* This CSS file contains important fixes for accordion control rendering */
+
+/* Force drop areas to be visible */
+[data-droppable="true"] {
+  visibility: visible !important;
+  display: flex !important;
+}
+
+/* Fix for the drop area at the bottom of sections */
+[data-drop-area="section-footer"] {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 2 !important;
+  margin-top: auto !important;
+  width: 100% !important;
+  border: 2px dashed #e2e8f0 !important;
+  background-color: #f8fafc !important;
+}
+
+/* Ensure container heights are adequate */
+.accordion-horizontal-container {
+  min-height: 320px !important;
+}
+
+/* Fix for overflow issues */
+[data-layout="horizontal"] {
+  overflow: visible !important;
+}
+
+/* Make sure child controls are visible */
+[data-layout="horizontal"] .section-control-item {
+  z-index: 1;
+  overflow: visible;
+}
+
+/* Fix scrolling behavior */
+.accordion-section-content {
+  overflow-y: visible !important;
+  height: auto !important;
+  min-height: 200px !important;
+}
+
+/* Add extra space for controls */
+.section-controls-container {
+  padding-bottom: 50px !important;
+}

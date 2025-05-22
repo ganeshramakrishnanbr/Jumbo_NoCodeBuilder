@@ -1,0 +1,301 @@
+/* Accordion control specific styles for drag and drop */
+
+/* Horizontal layout styles */
+[data-accordion-layout="horizontal"] {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  min-height: 220px;
+  padding-bottom: 12px;
+  width: 100%;
+  position: relative;
+  gap: 16px; /* Add explicit gap between sections */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+/* Custom scrollbar for webkit browsers */
+[data-accordion-layout="horizontal"]::-webkit-scrollbar {
+  height: 8px;
+}
+
+[data-accordion-layout="horizontal"]::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.6);
+  border-radius: 4px;
+}
+
+[data-accordion-layout="horizontal"]::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 4px;
+}
+
+[data-accordion-layout="horizontal"]::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.7);
+}
+
+/* Section styles in horizontal layout */
+[data-layout="horizontal"] {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+  min-width: 300px;
+  max-width: 500px;
+  /* Remove margin-right and rely on gap property from parent */
+  overflow: visible; 
+  z-index: 1;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhance animation for expansion/collapse */
+[data-layout="horizontal"] .accordion-section-content {
+  transition: min-height 0.3s ease, max-height 0.3s ease, opacity 0.3s ease;
+}
+
+/* Highlight when section is active drop target */
+[data-layout="horizontal"].active-drop-target {
+  box-shadow: 0 0 0 2px #3b82f6, 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  outline: 1px solid rgba(59, 130, 246, 0.5);
+}
+
+/* Ensure drop zones are visible and properly sized in horizontal layout */
+[data-layout="horizontal"] [data-droppable="true"] {
+  width: 100%;
+  min-height: 50px;
+}
+
+/* Enhance visual feedback during drag operations */
+.drag-over-highlight {
+  outline: 2px dashed #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.05) !important;
+}
+
+/* Make child controls fill the width of their container in horizontal layout */
+[data-layout="horizontal"] .canvas-control-wrapper {
+  width: 100%;
+}
+
+/* Enhanced hover states for drop areas */
+[data-accordion-layout="horizontal"] .border-dashed:hover {
+  border-color: #93c5fd;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Fixed height for empty drop areas to ensure they're easily targetable */
+[data-layout="horizontal"] .border-dashed {
+  min-height: 60px;
+}
+
+/* Visual styles during drag operations */
+.border-blue-300.bg-blue-50 {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Specific styles for horizontal accordion section content */
+[data-layout="horizontal"] .accordion-section-content {
+  width: 100%;
+  flex: 1 1 auto; /* Allow content area to grow and fill available space */
+  display: flex;
+  flex-direction: column;
+  min-height: 250px; /* Increased minimum height */
+  max-height: 500px; /* Maximum height to control layout */
+  overflow-y: visible;
+  position: relative; /* Needed for absolute positioning of drop indicators */
+  padding-bottom: 0; /* Remove bottom padding */
+  justify-content: space-between; /* Important: Push content to top and bottom */
+}
+
+/* Handle collapsed sections in horizontal layout - make them still visible but with reduced height */
+[data-layout="horizontal"] .accordion-section-content[data-section-expanded="false"] {
+  min-height: 70px;
+  max-height: 120px;
+  background-color: rgba(249, 250, 251, 0.5); /* Light gray background to indicate collapsed state */
+  border-top: 1px dashed #e5e7eb;
+  overflow: hidden;
+}
+
+/* Enhanced container for controls in horizontal layout */
+[data-layout="horizontal"] .section-controls-container.horizontal-controls {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100px;
+  height: auto !important; /* Force height to auto instead of being calculated */
+  overflow-y: visible;
+  gap: 10px; /* Space between items */
+  padding-bottom: 0; /* Remove padding at the bottom */
+  flex: 1;
+}
+
+/* Control items in horizontal layout */
+[data-layout="horizontal"] .section-control-item {
+  width: 100%;
+  margin-bottom: 8px;
+  background-color: white;
+  border-radius: 4px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Make drop areas more visible in horizontal layout */
+[data-layout="horizontal"] .drop-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: auto;
+  margin-bottom: 0;
+  width: 100%;
+  min-height: 60px;
+  border: 2px dashed #e2e8f0;
+  border-radius: 4px;
+  background-color: #f8fafc;
+  transition: all 0.2s ease;
+  position: sticky;
+  bottom: 0;
+}
+
+/* Drop area hover effect */
+[data-layout="horizontal"] .drop-area:hover {
+  border-color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Empty section styles */
+[data-layout="horizontal"] .empty-section-drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  width: 100%;
+  border: 2px dashed #e2e8f0;
+  border-radius: 6px;
+  background-color: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+/* Ensure controls in horizontal accordion sections fill the width */
+[data-layout="horizontal"] .accordion-section-content > div {
+  width: 100%;
+  position: relative; /* Enable proper positioning of child elements */
+}
+
+/* Make empty drop targets more attractive in horizontal layout */
+[data-layout="horizontal"] .accordion-section-content .border-dashed {
+  min-height: 70px; /* Taller drop areas for easier targeting */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-width: 2px;
+  transition: all 0.2s ease;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/* Enhance hover effects for drop targets */
+[data-layout="horizontal"] .accordion-section-content .border-dashed:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+  border-color: #93c5fd;
+}
+
+/* Make drop areas more visible during drag operations */
+[data-layout="horizontal"] [data-droppable="true"] {
+  transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
+  transform-origin: center;
+}
+
+/* Enhanced states for drag and drop targets */
+[data-layout="horizontal"] [data-droppable="true"]:hover,
+[data-layout="horizontal"] .drag-over-highlight {
+  background-color: rgba(59, 130, 246, 0.05) !important;
+  border-color: #3b82f6 !important;
+  transform: scale(1.01);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Improved empty state styles */
+[data-layout="horizontal"] .accordion-section-content div[class*="text-center"] {
+  background-image: url('./drop-indicator.svg');
+  background-repeat: no-repeat;
+  background-position: center 10px;
+  background-size: 24px;
+  padding-top: 40px;
+}
+
+/* Explicitly make all accordion controls take up full width of their container */
+[data-layout="horizontal"] .flex-1 {
+  width: 100%;
+}
+
+/* Fix positioning of drag handle in horizontal layout */
+[data-layout="horizontal"] .cursor-move {
+  align-self: flex-start;
+}
+
+/* Show an indicator when dragging between items */
+[data-accordion-layout="horizontal"] .border-t-2.border-blue-500,
+[data-accordion-layout="horizontal"] .border-b-2.border-blue-500 {
+  position: relative;
+}
+
+/* Add visual indicator for drop position */
+[data-accordion-layout="horizontal"] .border-t-2.border-blue-500::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #3b82f6;
+  top: -1px;
+  z-index: 10;
+}
+
+[data-accordion-layout="horizontal"] .border-b-2.border-blue-500::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #3b82f6;
+  bottom: -1px;
+  z-index: 10;
+}
+
+/* Section dividers for better visual separation */
+[data-layout="horizontal"] {
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Ensure controls are properly visible in all sections */
+[data-layout="horizontal"] .accordion-section-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+[data-layout="horizontal"] .accordion-section-content::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.6);
+  border-radius: 4px;
+}
+
+[data-layout="horizontal"] .accordion-section-content::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 4px;
+}
+
+/* Force all child controls to be visible and respect container boundaries */
+[data-layout="horizontal"] .flex-1 > div {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Fix for controls rendering */
+[data-layout="horizontal"] .section-control-item:last-child {
+  margin-bottom: 20px;
+}
+
+/* Make drop targets super visible */
+[data-section-id] [data-droppable="true"] {
+  visibility: visible !important;
+  display: flex !important;
+  opacity: 0.9 !important;
+}
